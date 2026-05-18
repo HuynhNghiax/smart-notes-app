@@ -4,15 +4,16 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Patterns;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+
 import com.example.smartnotesfrontend.MainActivity;
 import com.example.smartnotesfrontend.R;
+import com.example.smartnotesfrontend.utils.SharedPrefManager;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -24,25 +25,29 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // ĐOẠN MỚI: Nếu đã có token rồi thì bỏ qua màn Login, vào thẳng Main
+        if (SharedPrefManager.getInstance(this).getToken() != null) {
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_login);
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        // ... (Giữ nguyên đoạn ánh xạfindViewById của bạn bên dưới) ...
 
-        edtEmail = findViewById(R.id.edtEmail);
-        edtPassword = findViewById(R.id.edtPassword);
-        tvRegisterLink = findViewById(R.id.tvRegisterLink);
-        tvForgotPassword = findViewById(R.id.tvForgotPassword);
-        btnLogin = findViewById(R.id.btnLogin);
-
-        tvRegisterLink.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, RegisterActivity.class)));
-        tvForgotPassword.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class)));
-
-        btnLogin.setOnClickListener(v -> handleLogin());
-
-        // Lắng nghe tín hiệu trả về từ mạng ngầm
+        // Cập nhật lại đoạn lắng nghe AuthResult để lưu Token thật vào máy
         authViewModel.getAuthResult().observe(this, result -> {
             if (result != null) {
                 if (result.startsWith("LOGIN_SUCCESS")) {
+                    // Tách lấy chuỗi Token phía sau dấu ":"
+                    String token = result.substring(14);
+
+                    // ĐOẠN MỚI: Lưu token vào bộ nhớ máy
+                    SharedPrefManager.getInstance(this).saveToken(token);
+
                     Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                     finish();
