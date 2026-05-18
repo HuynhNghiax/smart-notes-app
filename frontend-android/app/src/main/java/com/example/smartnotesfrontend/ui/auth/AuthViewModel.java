@@ -3,12 +3,9 @@ package com.example.smartnotesfrontend.ui.auth;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-
-import com.example.smartnotesfrontend.data.model.AuthResponse;
-import com.example.smartnotesfrontend.data.model.LoginRequest;
-import com.example.smartnotesfrontend.data.model.RegisterRequest;
 import com.example.smartnotesfrontend.data.remote.RetrofitClient;
-
+import java.util.HashMap;
+import java.util.Map;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -18,58 +15,118 @@ public class AuthViewModel extends ViewModel {
     private final MutableLiveData<String> authResult = new MutableLiveData<>();
     public LiveData<String> getAuthResult() { return authResult; }
 
+    public void clearResult() {
+        authResult.setValue(null);
+    }
+
     public void loginUser(String email, String password) {
-        LoginRequest request = new LoginRequest(email, password);
-        RetrofitClient.getApiService().login(request).enqueue(new Callback<AuthResponse>() {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", email);
+        body.put("password", password);
+
+        RetrofitClient.getApiService().login(body).enqueue(new Callback<Map<String, String>>() {
             @Override
-            public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
+            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    authResult.setValue("LOGIN_SUCCESS:" + response.body().getToken());
+                    String token = response.body().get("token");
+                    authResult.setValue("LOGIN_SUCCESS:" + token);
                 } else {
-                    authResult.setValue("Lỗi: Sai tài khoản hoặc mật khẩu");
+                    authResult.setValue("Lỗi: Tài khoản/mật khẩu sai hoặc tài khoản chưa kích hoạt!");
                 }
             }
 
             @Override
-            public void onFailure(Call<AuthResponse> call, Throwable t) {
-                authResult.setValue("Lỗi kết nối Server: " + t.getMessage());
+            public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                authResult.setValue("Thất bại: Server Spring Boot chưa bật hoặc sai IP!");
             }
         });
     }
 
     public void registerUser(String email, String password) {
-        RegisterRequest request = new RegisterRequest(email, password);
-        RetrofitClient.getApiService().register(request).enqueue(new Callback<RegisterRequest>() {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", email);
+        body.put("password", password);
+
+        RetrofitClient.getApiService().register(body).enqueue(new Callback<Map<String, String>>() {
             @Override
-            public void onResponse(Call<RegisterRequest> call, Response<RegisterRequest> response) {
+            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
                 if (response.isSuccessful()) {
                     authResult.setValue("REGISTER_SUCCESS");
                 } else {
-                    authResult.setValue("Lỗi: Email đã được sử dụng");
+                    authResult.setValue("Lỗi: Email này đã tồn tại trong Database!");
                 }
             }
 
             @Override
-            public void onFailure(Call<RegisterRequest> call, Throwable t) {
-                authResult.setValue("Lỗi kết nối Server: " + t.getMessage());
+            public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                authResult.setValue("Thất bại: Không thể kết nối tới Server Spring Boot!");
+            }
+        });
+    }
+
+    public void verifyOtp(String email, String otp) {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", email);
+        body.put("otp", otp);
+
+        RetrofitClient.getApiService().verifyOtp(body).enqueue(new Callback<Map<String, String>>() {
+            @Override
+            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                if (response.isSuccessful()) {
+                    authResult.setValue("VERIFY_SUCCESS");
+                } else {
+                    authResult.setValue("Lỗi: Mã OTP không chính xác hoặc đã quá hạn 60 giây!");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                authResult.setValue("Thất bại: Mất kết nối mạng lên Server!");
             }
         });
     }
 
     public void requestOtp(String email) {
-        RetrofitClient.getApiService().forgotPassword(email).enqueue(new Callback<AuthResponse>() {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", email);
+
+        RetrofitClient.getApiService().forgotPassword(body).enqueue(new Callback<Map<String, String>>() {
             @Override
-            public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
+            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
                 if (response.isSuccessful()) {
                     authResult.setValue("OTP_SENT_SUCCESS");
                 } else {
-                    authResult.setValue("Lỗi: Email không tồn tại trên hệ thống");
+                    authResult.setValue("Lỗi: Email này chưa được đăng ký trong hệ thống!");
                 }
             }
 
             @Override
-            public void onFailure(Call<AuthResponse> call, Throwable t) {
-                authResult.setValue("Lỗi kết nối Server: " + t.getMessage());
+            public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                authResult.setValue("Thất bại: Không thể kết nối tới Server mạng local!");
+            }
+        });
+    }
+
+    // BỔ SUNG CHÍNH XÁC: Hàm đóng gói mã OTP và mật khẩu mới bắn lên Server Spring Boot
+    public void resetPassword(String email, String otp, String newPassword) {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", email);
+        body.put("otp", otp);
+        body.put("newPassword", newPassword);
+
+        RetrofitClient.getApiService().resetPassword(body).enqueue(new Callback<Map<String, String>>() {
+            @Override
+            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                if (response.isSuccessful()) {
+                    authResult.setValue("RESET_SUCCESS");
+                } else {
+                    authResult.setValue("Lỗi: Mã OTP khôi phục không đúng hoặc đã hết hạn!");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                authResult.setValue("Thất bại: Không thể kết nối đường truyền tới Server!");
             }
         });
     }

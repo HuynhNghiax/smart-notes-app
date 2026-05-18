@@ -1,22 +1,24 @@
 package com.example.smartnotesfrontend.data.remote;
 
-import com.example.smartnotesfrontend.data.model.AuthResponse;
-import com.example.smartnotesfrontend.data.model.LoginRequest;
-import com.example.smartnotesfrontend.data.model.RegisterRequest;
-
+import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
-import retrofit2.http.Query;
 
 public interface ApiService {
 
-    @POST("api/auth/login")
-    Call<AuthResponse> login(@Body LoginRequest request);
-
     @POST("api/auth/register")
-    Call<RegisterRequest> register(@Body RegisterRequest request);
+    Call<Map<String, String>> register(@Body Map<String, String> body);
+
+    @POST("api/auth/verify-otp")
+    Call<Map<String, String>> verifyOtp(@Body Map<String, String> body);
+
+    @POST("api/auth/login")
+    Call<Map<String, String>> login(@Body Map<String, String> body);
 
     @POST("api/auth/forgot-password")
-    Call<AuthResponse> forgotPassword(@Query("email") String email);
+    Call<Map<String, String>> forgotPassword(@Body Map<String, String> body);
+
+    @POST("api/auth/reset-password")
+    Call<Map<String, String>> resetPassword(@Body Map<String, String> body);
 }

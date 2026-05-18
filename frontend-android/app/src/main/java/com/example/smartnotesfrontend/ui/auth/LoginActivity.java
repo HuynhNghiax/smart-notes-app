@@ -10,23 +10,23 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
-
 import com.example.smartnotesfrontend.MainActivity;
 import com.example.smartnotesfrontend.R;
 import com.example.smartnotesfrontend.utils.SharedPrefManager;
+import com.google.android.material.button.MaterialButton;
 
 public class LoginActivity extends AppCompatActivity {
 
     private EditText edtEmail, edtPassword;
     private TextView tvRegisterLink, tvForgotPassword;
     private Button btnLogin;
+    private MaterialButton btnGoogleLogin;
     private AuthViewModel authViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ĐOẠN MỚI: Nếu đã có token rồi thì bỏ qua màn Login, vào thẳng Main
         if (SharedPrefManager.getInstance(this).getToken() != null) {
             startActivity(new Intent(LoginActivity.this, MainActivity.class));
             finish();
@@ -36,18 +36,26 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
-        // ... (Giữ nguyên đoạn ánh xạfindViewById của bạn bên dưới) ...
 
-        // Cập nhật lại đoạn lắng nghe AuthResult để lưu Token thật vào máy
+        edtEmail = findViewById(R.id.edtEmail);
+        edtPassword = findViewById(R.id.edtPassword);
+        tvRegisterLink = findViewById(R.id.tvRegisterLink);
+        tvForgotPassword = findViewById(R.id.tvForgotPassword);
+        btnLogin = findViewById(R.id.btnLogin);
+        btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
+
+        tvRegisterLink.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, RegisterActivity.class)));
+        tvForgotPassword.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class)));
+
+        btnLogin.setOnClickListener(v -> handleLogin());
+
+        btnGoogleLogin.setOnClickListener(v -> Toast.makeText(LoginActivity.this, "Đang kết nối SDK Google...", Toast.LENGTH_SHORT).show());
+
         authViewModel.getAuthResult().observe(this, result -> {
             if (result != null) {
                 if (result.startsWith("LOGIN_SUCCESS")) {
-                    // Tách lấy chuỗi Token phía sau dấu ":"
                     String token = result.substring(14);
-
-                    // ĐOẠN MỚI: Lưu token vào bộ nhớ máy
                     SharedPrefManager.getInstance(this).saveToken(token);
-
                     Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                     finish();
@@ -71,6 +79,7 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+        Toast.makeText(this, "Đang xác thực thông tin...", Toast.LENGTH_SHORT).show();
         authViewModel.loginUser(email, password);
     }
 }

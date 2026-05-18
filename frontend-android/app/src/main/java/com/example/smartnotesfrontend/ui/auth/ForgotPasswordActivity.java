@@ -1,5 +1,6 @@
 package com.example.smartnotesfrontend.ui.auth;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Patterns;
@@ -17,6 +18,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private Button btnSendOtp;
     private TextView tvBackToLoginLink;
     private AuthViewModel authViewModel;
+    private String savedEmail; // Biến lưu email để truyền sang màn hình đặt lại mật khẩu
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +37,15 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         authViewModel.getAuthResult().observe(this, result -> {
             if (result != null) {
                 if (result.equals("OTP_SENT_SUCCESS")) {
-                    Toast.makeText(this, "Mã mật khẩu mới/OTP đã gửi vào Email của bạn!", Toast.LENGTH_LONG).show();
-                    finish();
+                    Toast.makeText(this, "Mã OTP khôi phục đã được gửi vào Email của bạn!", Toast.LENGTH_LONG).show();
+
+                    // CHỈNH SỬA: Chuyển hướng thông minh sang màn hình ResetPasswordActivity kèm theo Email dữ liệu
+                    Intent intent = new Intent(ForgotPasswordActivity.this, ResetPasswordActivity.class);
+                    intent.putExtra("email", savedEmail);
+                    startActivity(intent);
+
+                    authViewModel.clearResult(); // Giải phóng trạng thái thông báo LiveData
+                    finish(); // Khép vòng đời màn hình này lại
                 } else {
                     Toast.makeText(this, result, Toast.LENGTH_LONG).show();
                 }
@@ -52,6 +61,10 @@ public class ForgotPasswordActivity extends AppCompatActivity {
             return;
         }
 
+        savedEmail = email; // Lưu trữ email tạm thời
+        Toast.makeText(this, "Đang gửi yêu cầu mã xác thực...", Toast.LENGTH_SHORT).show();
+
+        // Gọi hàm kết nối mạng thật từ ViewModel
         authViewModel.requestOtp(email);
     }
 }
