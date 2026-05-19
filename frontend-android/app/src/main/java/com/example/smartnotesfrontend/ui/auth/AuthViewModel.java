@@ -71,7 +71,7 @@ public class AuthViewModel extends ViewModel {
 
         RetrofitClient.getApiService().verifyOtp(body).enqueue(new Callback<Map<String, String>>() {
             @Override
-            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) { // CHÍNH XÁC: Đã xóa chữ String thừa tại đây
                 if (response.isSuccessful()) {
                     authResult.setValue("VERIFY_SUCCESS");
                 } else {
@@ -107,7 +107,6 @@ public class AuthViewModel extends ViewModel {
         });
     }
 
-    // BỔ SUNG CHÍNH XÁC: Hàm đóng gói mã OTP và mật khẩu mới bắn lên Server Spring Boot
     public void resetPassword(String email, String otp, String newPassword) {
         Map<String, String> body = new HashMap<>();
         body.put("email", email);
@@ -127,6 +126,28 @@ public class AuthViewModel extends ViewModel {
             @Override
             public void onFailure(Call<Map<String, String>> call, Throwable t) {
                 authResult.setValue("Thất bại: Không thể kết nối đường truyền tới Server!");
+            }
+        });
+    }
+
+    public void loginWithGoogle(String idToken) {
+        Map<String, String> body = new HashMap<>();
+        body.put("idToken", idToken);
+
+        RetrofitClient.getApiService().loginWithGoogle(body).enqueue(new Callback<Map<String, String>>() {
+            @Override
+            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String token = response.body().get("token");
+                    authResult.setValue("LOGIN_SUCCESS:" + token);
+                } else {
+                    authResult.setValue("Lỗi: Server Google từ chối xác thực Token này!");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                authResult.setValue("Thất bại: Không thể gửi Token Google lên Server Spring Boot!");
             }
         });
     }

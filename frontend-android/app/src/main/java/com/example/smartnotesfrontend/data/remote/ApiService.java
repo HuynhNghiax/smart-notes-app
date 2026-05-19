@@ -21,4 +21,7 @@ public interface ApiService {
 
     @POST("api/auth/reset-password")
     Call<Map<String, String>> resetPassword(@Body Map<String, String> body);
+
+    @POST("api/auth/google")
+    Call<Map<String, String>> loginWithGoogle(@Body Map<String, String> body);
 }

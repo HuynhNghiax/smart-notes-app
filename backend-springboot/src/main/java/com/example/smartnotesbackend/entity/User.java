@@ -20,11 +20,11 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-    private boolean enabled = false; // Mặc định tài khoản mới tạo sẽ bị khóa cho đến khi nhập đúng OTP
+    private boolean enabled = false;
 
     @Column(name = "otp_code")
-    private String otpCode; // Lưu mã OTP 6 số tạm thời để đối chiếu
+    private String otpCode;
 
     @Column(name = "otp_expiry")
-    private LocalDateTime otpExpiry; // Mốc thời gian hết hạn của OTP (Thời gian tạo + 60 giây)
+    private LocalDateTime otpExpiry;
 }

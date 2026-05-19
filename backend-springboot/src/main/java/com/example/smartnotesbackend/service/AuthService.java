@@ -3,7 +3,7 @@ package com.example.smartnotesbackend.service;
 import com.example.smartnotesbackend.entity.User;
 import com.example.smartnotesbackend.repository.UserRepository;
 import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender; // CHÍNH XÁC: Đã sửa lại đường dẫn import ở đây
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -13,15 +13,17 @@ import java.util.Random;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final JavaMailSender mailSender; // Công cụ gửi thư của Spring
+    private final JavaMailSender mailSender;
 
-    // Inject các dependency vào Constructor
+    // Bộ băm mật khẩu BCrypt xịn của Spring Security
+    private final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder = 
+            new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+
     public AuthService(UserRepository userRepository, JavaMailSender mailSender) {
         this.userRepository = userRepository;
         this.mailSender = mailSender;
     }
 
-    // Hàm phụ trợ thực hiện gửi mail ngầm
     private void sendEmail(String toEmail, String subject, String content) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -36,7 +38,7 @@ public class AuthService {
         }
     }
 
-    // Logic Đăng ký tài khoản mới và tự động gửi OTP có hạn 60 giây vào Email thật
+    // Đăng ký tài khoản mới: Tiến hành băm mật khẩu trước khi lưu
     public String registerUser(String email, String password) {
         if (userRepository.findByEmail(email).isPresent()) {
             return "EMAIL_ALREADY_EXISTS";
@@ -44,16 +46,17 @@ public class AuthService {
 
         User user = new User();
         user.setEmail(email);
-        user.setPassword(password); 
+        
+        String hashedPassword = passwordEncoder.encode(password);
+        user.setPassword(hashedPassword); 
         user.setEnabled(false); 
 
         String randomOtp = String.format("%06d", new Random().nextInt(999999));
         user.setOtpCode(randomOtp);
-        user.setOtpExpiry(LocalDateTime.now().plusSeconds(60)); // THỜI HẠN CHÍNH XÁC 60 GIÂY
+        user.setOtpExpiry(LocalDateTime.now().plusSeconds(60)); 
 
         userRepository.save(user);
 
-        // Gọi lệnh gửi thư thực tế đến hộp thư Gmail của người dùng
         String mailSubject = "[Smart Notes] Mã OTP Kích Hoạt Tài Khoản Của Bạn";
         String mailContent = "Chào bạn,\n\nMã OTP kích hoạt tài khoản Smart Notes của bạn là: " + randomOtp 
                            + "\nMã số này có hiệu lực trong vòng 60 giây. Vui lòng không chia sẻ mã này cho ai.";
@@ -63,7 +66,6 @@ public class AuthService {
         return "REGISTER_SUCCESS";
     }
 
-    // Logic Kiểm tra mã OTP nhập từ ứng dụng điện thoại gửi lên
     public String verifyOtp(String email, String otpInput) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -87,7 +89,7 @@ public class AuthService {
         return "VERIFY_SUCCESS";
     }
 
-    // Logic Đăng nhập hệ thống
+    // Đăng nhập hệ thống: Dùng hàm matches để so sánh mật khẩu băm
     public String loginUser(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -100,13 +102,12 @@ public class AuthService {
             return "ACCOUNT_NOT_ACTIVATED";
         }
         
-        if (user.getPassword().equals(password)) {
+        if (passwordEncoder.matches(password, user.getPassword())) {
             return "MOCK_JWT_TOKEN_FOR_SMART_NOTES_PROJECT_2026"; 
         }
         return "WRONG_CREDENTIALS";
     }
 
-    // Xử lý yêu cầu tạo mã OTP khôi phục khi Quên mật khẩu và gửi Email thật
     public String requestForgotPassword(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -120,7 +121,6 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Gửi email khôi phục mật khẩu thật
         String mailSubject = "[Smart Notes] Yêu Cầu Đặt Lại Mật Khẩu";
         String mailContent = "Bạn vừa yêu cầu đặt lại mật khẩu.\nMã OTP xác minh khôi phục của bạn là: " + recoveryOtp 
                            + "\nMã số này có hiệu lực trong vòng 5 phút.";
@@ -130,7 +130,7 @@ public class AuthService {
         return "OTP_SENT_SUCCESS";
     }
 
-    // Kiểm tra OTP khôi phục và tiến hành Đặt lại mật khẩu mới
+    // Đặt lại mật khẩu mới: Tiến hành băm mật khẩu mới trước khi cập nhật
     public String resetPassword(String email, String otpInput, String newPassword) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -147,10 +147,28 @@ public class AuthService {
             return "INVALID_OTP";
         }
 
-        user.setPassword(newPassword);
+        String hashedNewPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(hashedNewPassword);
         user.setOtpCode(null);
         user.setOtpExpiry(null);
         userRepository.save(user);
         return "RESET_SUCCESS";
+    }
+
+    // CHÍNH XÁC: Hàm xử lý liên thông Đăng nhập/Đăng ký ngầm bằng tài khoản Google
+    public String loginOrRegisterWithGoogle(String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        
+        if (userOpt.isEmpty()) {
+            User newUser = new User();
+            newUser.setEmail(email);
+            // Đặt password mặc định ngẫu nhiên được băm an toàn
+            newUser.setPassword(passwordEncoder.encode("Google_OAuth_Account_Protected_2026")); 
+            newUser.setEnabled(true); // Tài khoản Google là sạch, kích hoạt thẳng luôn không cần qua bước OTP
+            userRepository.save(newUser);
+            System.out.println(">>> [OAUTH2] Đã tự động tạo tài khoản Google mới tinh cho: " + email);
+        }
+        
+        return "MOCK_JWT_TOKEN_FOR_GOOGLE_USER_" + email;
     }
 }

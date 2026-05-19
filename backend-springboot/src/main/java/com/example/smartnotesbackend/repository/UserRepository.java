@@ -8,6 +8,5 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     
-    // Hàm tìm kiếm người dùng bằng email để phục vụ Login, Register và Kiểm tra trùng lặp
     Optional<User> findByEmail(String email);
 }

@@ -1,15 +1,24 @@
 package com.example.smartnotesbackend.controller;
 
 import com.example.smartnotesbackend.service.AuthService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
+import java.util.Collections;
+import java.util.HashMap;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
+
+    private static final String GOOGLE_CLIENT_ID = "740919720022-7r318pifh78uvflu9l2scsl2mmad3hd5.apps.googleusercontent.com";
 
     public AuthController(AuthService authService) {
         this.authService = authService;
@@ -51,7 +60,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("token", result));
     }
 
-    // BỔ SUNG CHÍNH XÁC: API tiếp nhận yêu cầu Quên mật khẩu (Sinh mã OTP khôi phục)
+    // API tiếp nhận yêu cầu Quên mật khẩu (Sinh mã OTP khôi phục)
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String result = authService.requestForgotPassword(request.get("email"));
@@ -61,7 +70,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Mã OTP khôi phục mật khẩu đã được tạo thành công!"));
     }
 
-    // BỔ SUNG CHÍNH XÁC: API tiếp nhận yêu cầu Đặt lại mật khẩu mới tinh
+    // API tiếp nhận yêu cầu Đặt lại mật khẩu mới tinh
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
         String result = authService.resetPassword(request.get("email"), request.get("otp"), request.get("newPassword"));
@@ -75,5 +84,31 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP nhập vào để khôi phục không chính xác!"));
         }
         return ResponseEntity.ok(Map.of("message", "Mật khẩu của bạn đã được thay đổi thành công!"));
+    }
+
+    //HÀM NHẬN TOKEN GOOGLE TỪ ANDROID GỬI LÊN VÀ XÁC THỰC TOKEN NÀY VỚI GOOGLE, NẾU HỢP LỆ THÌ TỰ ĐỘNG ĐĂNG NHẬP/ĐĂNG KÝ NGẦM CHO NGƯỜI DÙNG
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
+        String idTokenString = request.get("idToken");
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String email = payload.getEmail();
+
+                // Liên thông xuống AuthService tự động đăng nhập/đăng ký ngầm
+                String mockToken = authService.loginOrRegisterWithGoogle(email);
+                return ResponseEntity.ok(Map.of("token", mockToken));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "Chứng chỉ Token Google gửi lên không hợp lệ!"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Lỗi xử lý xác thực hệ thống Google: " + e.getMessage()));
+        }
     }
 }

@@ -52,4 +52,6 @@ dependencies {
     // ViewModel và LiveData (Cốt lõi của kiến trúc MVVM)
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
     implementation("androidx.lifecycle:lifecycle-livedata:2.6.2")
+    // Thư viện Google Sign-In chính hãng
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 }
