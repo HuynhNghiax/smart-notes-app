@@ -5,17 +5,30 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
 
-    // THAY ĐỔI CHÍNH XÁC: Sử dụng IP 10.0.2.2 để Máy ảo Android bơi ra được máy tính local
-    private static final String BASE_URL = "http://10.0.2.2:8080/";
-    private static Retrofit retrofit = null;
+    // IP máy chạy Spring Boot
+    private static final String BASE_URL =
+            "http://10.0.2.2:8080/";
 
-    public static ApiService getApiService() {
+    private static Retrofit retrofit;
+
+    public static Retrofit getRetrofitInstance() {
+
         if (retrofit == null) {
+
             retrofit = new Retrofit.Builder()
                     .baseUrl(BASE_URL)
-                    .addConverterFactory(GsonConverterFactory.create())
+                    .addConverterFactory(
+                            GsonConverterFactory.create()
+                    )
                     .build();
         }
-        return retrofit.create(ApiService.class);
+
+        return retrofit;
+    }
+
+    public static ApiService getApiService() {
+
+        return getRetrofitInstance()
+                .create(ApiService.class);
     }
 }
