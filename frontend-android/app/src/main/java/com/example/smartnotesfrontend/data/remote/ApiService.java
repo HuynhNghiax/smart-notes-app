@@ -48,4 +48,27 @@ public interface ApiService {
 
     @DELETE("api/notes/{id}")
     Call<String> deleteNote(@Path("id") Long id);
+
+   // CATEGORY APIs
+    @POST("api/categories/create")
+    Call<Map<String, Object>> createCategory(@Header("Authorization") String token, @Body Map<String, String> body);
+
+    @GET("api/categories/list")
+    Call<List<Map<String, Object>>> getCategories(@Header("Authorization") String token);
+
+    @PUT("api/categories/update/{categoryId}")
+    Call<Map<String, Object>> updateCategory(@Header("Authorization") String token, @Path("categoryId") Long categoryId, @Body Map<String, String> body);
+
+    @DELETE("api/categories/delete/{categoryId}")
+    Call<Map<String, String>> deleteCategory(@Header("Authorization") String token, @Path("categoryId") Long categoryId);
+
+    // SEARCH APIs
+    @GET("api/search/notes")
+    Call<List<Map<String, Object>>> searchNotes(@Header("Authorization") String token, @Query("keyword") String keyword);
+
+    @GET("api/search/pinned")
+    Call<List<Map<String, Object>>> getPinnedNotes(@Header("Authorization") String token);
+
+    @GET("api/search/category/{categoryId}")
+    Call<List<Map<String, Object>>> getNotesByCategory(@Header("Authorization") String token, @Path("categoryId") Long categoryId);
 }

@@ -43,6 +43,13 @@
         <activity
             android:name=".ui.auth.OtpVerificationActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.categories.CategoryActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.search.SearchActivity"
+            android:exported="false" />
 
         <activity android:name=".notes.ui.NotesActivity"/>
         <activity android:name=".notes.ui.AddEditNoteActivity"/>
