@@ -26,10 +26,9 @@ public class MainActivity extends AppCompatActivity {
 
         // 2. Cài đặt Toolbar thay thế cho ActionBar mặc định
         setSupportActionBar(toolbar);
-
-        // 3. Bắt sự kiện khi bấm nút Thêm ghi chú tròn nổi (FAB)
+        // 3. Bắt sự kiện khi bấm nút Thêm ghi chú tròn nổi (FAB)SS
         fabAddNote.setOnClickListener(v -> {
-            Toast.makeText(MainActivity.this, "Mở màn hình thêm ghi chú mới (Tính năng của Thành viên 2)", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(MainActivity.this, NotesActivity.class));
         });
     }
     @Override

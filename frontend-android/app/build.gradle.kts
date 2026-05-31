@@ -54,4 +54,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata:2.6.2")
     // Thư viện Google Sign-In chính hãng
     implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
 }
