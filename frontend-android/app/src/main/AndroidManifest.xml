@@ -51,6 +51,9 @@
             android:name=".ui.search.SearchActivity"
             android:exported="false" />
 
+        <activity android:name=".notes.ui.NotesActivity"/>
+        <activity android:name=".notes.ui.AddEditNoteActivity"/>
+
     </application>
 
 </manifest>

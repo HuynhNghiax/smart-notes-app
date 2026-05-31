@@ -1,16 +1,13 @@
 package com.example.smartnotesfrontend.data.remote;
 
+import com.example.smartnotesfrontend.data.model.Note;
+
 import java.util.Map;
+import java.util.List;
 import retrofit2.Call;
+import retrofit2.http.*;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
-import retrofit2.http.GET;
-import retrofit2.http.PUT;
-import retrofit2.http.DELETE;
-import retrofit2.http.Header;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
-import java.util.List;
 
 public interface ApiService {
 
@@ -32,7 +29,27 @@ public interface ApiService {
     @POST("api/auth/google")
     Call<Map<String, String>> loginWithGoogle(@Body Map<String, String> body);
 
-     // Category APIs (Thành viên 3)
+    // NOTES APIs
+
+    @GET("api/notes/{userId}")
+    Call<List<Note>> getNotes(@Path("userId") Long userId);
+
+    @POST("api/notes/{userId}")
+    Call<Note> createNote(
+            @Path("userId") Long userId,
+            @Body Note note
+    );
+
+    @PUT("api/notes/{id}")
+    Call<Note> updateNote(
+            @Path("id") Long id,
+            @Body Note note
+    );
+
+    @DELETE("api/notes/{id}")
+    Call<String> deleteNote(@Path("id") Long id);
+
+   // CATEGORY APIs
     @POST("api/categories/create")
     Call<Map<String, Object>> createCategory(@Header("Authorization") String token, @Body Map<String, String> body);
 
@@ -45,7 +62,7 @@ public interface ApiService {
     @DELETE("api/categories/delete/{categoryId}")
     Call<Map<String, String>> deleteCategory(@Header("Authorization") String token, @Path("categoryId") Long categoryId);
 
-    // Search APIs (Thành viên 3)
+    // SEARCH APIs
     @GET("api/search/notes")
     Call<List<Map<String, Object>>> searchNotes(@Header("Authorization") String token, @Query("keyword") String keyword);
 
@@ -54,5 +71,4 @@ public interface ApiService {
 
     @GET("api/search/category/{categoryId}")
     Call<List<Map<String, Object>>> getNotesByCategory(@Header("Authorization") String token, @Path("categoryId") Long categoryId);
-
 }

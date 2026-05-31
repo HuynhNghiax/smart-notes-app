@@ -1,25 +1,18 @@
-package com.example.smartnotesbackend.entity;
+package com.example.smartnotesfrontend.data.model;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "notes")
 public class Note {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String title;
-
-    @Column(columnDefinition = "TEXT")
     private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
     public Note() {
+    }
+
+    public Note(Long id, String title, String content) {
+        this.id = id;
+        this.title = title;
+        this.content = content;
     }
 
     public Long getId() {
@@ -44,13 +37,5 @@ public class Note {
 
     public void setContent(String content) {
         this.content = content;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
     }
 }
