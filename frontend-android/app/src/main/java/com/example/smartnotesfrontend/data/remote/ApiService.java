@@ -1,7 +1,11 @@
 package com.example.smartnotesfrontend.data.remote;
 
+import com.example.smartnotesfrontend.data.model.Note;
+
 import java.util.Map;
+import java.util.List;
 import retrofit2.Call;
+import retrofit2.http.*;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
 
@@ -24,4 +28,24 @@ public interface ApiService {
 
     @POST("api/auth/google")
     Call<Map<String, String>> loginWithGoogle(@Body Map<String, String> body);
+
+    // NOTES APIs
+
+    @GET("api/notes/{userId}")
+    Call<List<Note>> getNotes(@Path("userId") Long userId);
+
+    @POST("api/notes/{userId}")
+    Call<Note> createNote(
+            @Path("userId") Long userId,
+            @Body Note note
+    );
+
+    @PUT("api/notes/{id}")
+    Call<Note> updateNote(
+            @Path("id") Long id,
+            @Body Note note
+    );
+
+    @DELETE("api/notes/{id}")
+    Call<String> deleteNote(@Path("id") Long id);
 }
