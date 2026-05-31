@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.smartnotesfrontend.notes.ui.NotesActivity;
 
 public class MainActivity extends AppCompatActivity {
 
