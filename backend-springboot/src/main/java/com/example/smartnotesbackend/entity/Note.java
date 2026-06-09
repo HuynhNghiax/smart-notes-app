@@ -1,6 +1,7 @@
 package com.example.smartnotesbackend.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notes")
@@ -19,38 +20,47 @@ public class Note {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Note() {
-    }
+    @Column(name = "user_id", insertable = false, updatable = false)
+    private Long userId;
 
-    public Long getId() {
-        return id;
-    }
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    public String getTitle() {
-        return title;
-    }
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    @Column(name = "is_pinned")
+    private Boolean isPinned = false;
 
-    public String getContent() {
-        return content;
-    }
+    public Note() {}
 
-    public void setContent(String content) {
-        this.content = content;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public User getUser() {
-        return user;
-    }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
+    public Long getUserId() { return userId; }
+
+    public Category getCategory() { return category; }
+    public void setCategory(Category category) { this.category = category; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Boolean getIsPinned() { return isPinned; }
+    public void setIsPinned(Boolean isPinned) { this.isPinned = isPinned; }
 }

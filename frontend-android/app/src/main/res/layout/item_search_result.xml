@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:padding="12dp"
     android:layout_margin="8dp"
-    android:background="@drawable/bg_note_card"
+    android:background="#FFFFFF"
     android:elevation="2dp">
 
     <TextView

@@ -1,5 +1,6 @@
 package com.example.smartnotesfrontend.data.remote;
 
+import com.example.smartnotesfrontend.data.model.AiResponse;
 import com.example.smartnotesfrontend.data.model.Note;
 
 import java.util.Map;
@@ -71,4 +72,8 @@ public interface ApiService {
 
     @GET("api/search/category/{categoryId}")
     Call<List<Map<String, Object>>> getNotesByCategory(@Header("Authorization") String token, @Path("categoryId") Long categoryId);
+
+    // Trong file ApiService.java
+    @POST("api/ai/summarize")
+    Call<List<String>> summarizeNote(@Body Map<String, String> request);
 }
