@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import com.example.smartnotesfrontend.MainActivity;
 import com.example.smartnotesfrontend.R;
+import com.example.smartnotesfrontend.utils.SharedPrefManager;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -78,8 +79,11 @@ public class LoginActivity extends AppCompatActivity {
         // LẮNG NGHE TÍN HIỆU PHẢN HỒI (Áp dụng chung cho cả Đăng nhập thường và Đăng nhập Google)
         authViewModel.getAuthResult().observe(this, result -> {
             if (result != null) {
-                // CHÍNH XÁC: Cho phép chấp nhận cả Token hệ thống lẫn Token từ tài khoản Google gửi về
-                if (result.startsWith("LOGIN_SUCCESS") || result.startsWith("MOCK_JWT_TOKEN_FOR_GOOGLE_USER")) {
+                // BUG FIX: Token JWT thật không bắt đầu bằng "LOGIN_SUCCESS"
+                // Chỉ từ chối khi là lỗi rõ ràng, còn lại đều là token hợp lệ
+                if (!result.equals("WRONG_CREDENTIALS") && !result.equals("ACCOUNT_NOT_ACTIVATED")) {
+                    // Lưu token vào SharedPref để các màn hình khác dùng
+                    SharedPrefManager.getInstance(LoginActivity.this).saveToken(result);
                     Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
 
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);

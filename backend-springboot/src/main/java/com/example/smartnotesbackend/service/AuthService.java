@@ -2,6 +2,7 @@ package com.example.smartnotesbackend.service;
 
 import com.example.smartnotesbackend.entity.User;
 import com.example.smartnotesbackend.repository.UserRepository;
+import com.example.smartnotesbackend.util.JwtUtil;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,14 +15,16 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
+    private final JwtUtil jwtUtil;
 
     // Bộ băm mật khẩu BCrypt xịn của Spring Security
-    private final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder = 
+    private final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder =
             new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
 
-    public AuthService(UserRepository userRepository, JavaMailSender mailSender) {
+    public AuthService(UserRepository userRepository, JavaMailSender mailSender, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.mailSender = mailSender;
+        this.jwtUtil = jwtUtil;
     }
 
     private void sendEmail(String toEmail, String subject, String content) {
@@ -46,21 +49,21 @@ public class AuthService {
 
         User user = new User();
         user.setEmail(email);
-        
+
         String hashedPassword = passwordEncoder.encode(password);
-        user.setPassword(hashedPassword); 
-        user.setEnabled(false); 
+        user.setPassword(hashedPassword);
+        user.setEnabled(false);
 
         String randomOtp = String.format("%06d", new Random().nextInt(999999));
         user.setOtpCode(randomOtp);
-        user.setOtpExpiry(LocalDateTime.now().plusSeconds(60)); 
+        user.setOtpExpiry(LocalDateTime.now().plusSeconds(60));
 
         userRepository.save(user);
 
         String mailSubject = "[Smart Notes] Mã OTP Kích Hoạt Tài Khoản Của Bạn";
-        String mailContent = "Chào bạn,\n\nMã OTP kích hoạt tài khoản Smart Notes của bạn là: " + randomOtp 
-                           + "\nMã số này có hiệu lực trong vòng 60 giây. Vui lòng không chia sẻ mã này cho ai.";
-        
+        String mailContent = "Chào bạn,\n\nMã OTP kích hoạt tài khoản Smart Notes của bạn là: " + randomOtp
+                + "\nMã số này có hiệu lực trong vòng 60 giây. Vui lòng không chia sẻ mã này cho ai.";
+
         sendEmail(email, mailSubject, mailContent);
 
         return "REGISTER_SUCCESS";
@@ -101,9 +104,9 @@ public class AuthService {
         if (!user.isEnabled()) {
             return "ACCOUNT_NOT_ACTIVATED";
         }
-        
+
         if (passwordEncoder.matches(password, user.getPassword())) {
-            return "MOCK_JWT_TOKEN_FOR_SMART_NOTES_PROJECT_2026"; 
+            return jwtUtil.generateToken(user.getId());
         }
         return "WRONG_CREDENTIALS";
     }
@@ -117,14 +120,14 @@ public class AuthService {
         User user = userOpt.get();
         String recoveryOtp = String.format("%06d", new Random().nextInt(999999));
         user.setOtpCode(recoveryOtp);
-        user.setOtpExpiry(LocalDateTime.now().plusMinutes(5)); 
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
 
         userRepository.save(user);
 
         String mailSubject = "[Smart Notes] Yêu Cầu Đặt Lại Mật Khẩu";
-        String mailContent = "Bạn vừa yêu cầu đặt lại mật khẩu.\nMã OTP xác minh khôi phục của bạn là: " + recoveryOtp 
-                           + "\nMã số này có hiệu lực trong vòng 5 phút.";
-        
+        String mailContent = "Bạn vừa yêu cầu đặt lại mật khẩu.\nMã OTP xác minh khôi phục của bạn là: " + recoveryOtp
+                + "\nMã số này có hiệu lực trong vòng 5 phút.";
+
         sendEmail(email, mailSubject, mailContent);
 
         return "OTP_SENT_SUCCESS";
@@ -158,17 +161,23 @@ public class AuthService {
     // CHÍNH XÁC: Hàm xử lý liên thông Đăng nhập/Đăng ký ngầm bằng tài khoản Google
     public String loginOrRegisterWithGoogle(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
-        
+
         if (userOpt.isEmpty()) {
             User newUser = new User();
             newUser.setEmail(email);
             // Đặt password mặc định ngẫu nhiên được băm an toàn
-            newUser.setPassword(passwordEncoder.encode("Google_OAuth_Account_Protected_2026")); 
+            newUser.setPassword(passwordEncoder.encode("Google_OAuth_Account_Protected_2026"));
             newUser.setEnabled(true); // Tài khoản Google là sạch, kích hoạt thẳng luôn không cần qua bước OTP
             userRepository.save(newUser);
             System.out.println(">>> [OAUTH2] Đã tự động tạo tài khoản Google mới tinh cho: " + email);
         }
-        
-        return "MOCK_JWT_TOKEN_FOR_GOOGLE_USER_" + email;
+
+        User savedUser = userRepository.findByEmail(email).get();
+        return jwtUtil.generateToken(savedUser.getId());
+    }
+
+    // Hàm giải mã token để lấy userId — dùng cho CategoryController và SearchController
+    public Long extractUserIdFromToken(String token) {
+        return jwtUtil.extractUserId(token);
     }
 }

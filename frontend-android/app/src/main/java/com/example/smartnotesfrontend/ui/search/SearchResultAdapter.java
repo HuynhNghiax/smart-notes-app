@@ -31,12 +31,16 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Map<String, Object> note = searchResults.get(position);
-        
+
         String title = (String) note.get("title");
         String content = (String) note.get("content");
 
-        holder.tvTitle.setText(title);
-        holder.tvContent.setText(content != null ? content.substring(0, Math.min(100, content.length())) + "..." : "");
+        holder.tvTitle.setText(title != null ? title : "");
+        holder.tvContent.setText(
+            (content != null && !content.isEmpty())
+                ? content.substring(0, Math.min(100, content.length()))
+                : ""
+        );
     }
 
     @Override
