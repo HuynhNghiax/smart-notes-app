@@ -24,13 +24,23 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // API tiếp nhận yêu cầu Đăng ký tài khoản mới
+    // API tiếp nhận yêu cầu Đăng ký tài khoản mới (với device token tùy chọn)
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
-        String result = authService.registerUser(request.get("email"), request.get("password"));
+        String email = request.get("email");
+        String password = request.get("password");
+        String deviceToken = request.get("deviceToken");
+
+        String result = authService.registerUser(email, password);
         if (result.equals("EMAIL_ALREADY_EXISTS")) {
             return ResponseEntity.badRequest().body(Map.of("message", "Email này đã được đăng ký trên hệ thống"));
         }
+
+        // Lưu device token nếu có
+        if (deviceToken != null && !deviceToken.isEmpty()) {
+            authService.saveDeviceTokenForNewUser(email, deviceToken);
+        }
+
         return ResponseEntity.ok(Map.of("message", "Đăng ký thành công, mã kích hoạt đã được khởi tạo!"));
     }
 
@@ -47,16 +57,26 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Tài khoản của bạn đã được kích hoạt thành công!"));
     }
 
-    // API tiếp nhận yêu cầu Đăng nhập hệ thống
+    // API tiếp nhận yêu cầu Đăng nhập hệ thống (với device token tùy chọn)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        String result = authService.loginUser(request.get("email"), request.get("password"));
+        String email = request.get("email");
+        String password = request.get("password");
+        String deviceToken = request.get("deviceToken");
+
+        String result = authService.loginUser(email, password);
         if (result.equals("ACCOUNT_NOT_ACTIVATED")) {
             return ResponseEntity.badRequest().body(Map.of("message", "Tài khoản của bạn chưa được kích hoạt bằng mã OTP"));
         }
         if (result.equals("WRONG_CREDENTIALS")) {
             return ResponseEntity.badRequest().body(Map.of("message", "Tài khoản hoặc mật khẩu không chính xác"));
         }
+
+        // Lưu device token nếu có
+        if (deviceToken != null && !deviceToken.isEmpty()) {
+            authService.saveDeviceTokenForEmail(email, deviceToken);
+        }
+
         return ResponseEntity.ok(Map.of("token", result));
     }
 
@@ -90,6 +110,8 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
         String idTokenString = request.get("idToken");
+        String deviceToken = request.get("deviceToken");
+
         try {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                     .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
@@ -102,6 +124,12 @@ public class AuthController {
 
                 // Liên thông xuống AuthService tự động đăng nhập/đăng ký ngầm
                 String mockToken = authService.loginOrRegisterWithGoogle(email);
+
+                // Lưu device token nếu có
+                if (deviceToken != null && !deviceToken.isEmpty()) {
+                    authService.saveDeviceTokenForEmail(email, deviceToken);
+                }
+
                 return ResponseEntity.ok(Map.of("token", mockToken));
             } else {
                 return ResponseEntity.badRequest().body(Map.of("error", "Chứng chỉ Token Google gửi lên không hợp lệ!"));
@@ -109,6 +137,38 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Lỗi xử lý xác thực hệ thống Google: " + e.getMessage()));
+        }
+    }
+
+    // API quản lý device token (thêm/cập nhật)
+    @PostMapping("/device-token")
+    public ResponseEntity<?> saveDeviceToken(@RequestHeader("Authorization") String token,
+                                            @RequestBody com.example.smartnotesbackend.dto.DeviceTokenDTO dto) {
+        try {
+            String jwtToken = token.replace("Bearer ", "");
+            Long userId = authService.extractUserIdFromToken(jwtToken);
+
+            authService.saveOrUpdateDeviceToken(userId, dto.getDeviceToken());
+            return ResponseEntity.ok(Map.of("message", "Device token saved successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to save device token: " + e.getMessage()));
+        }
+    }
+
+    // API xóa device token
+    @DeleteMapping("/device-token")
+    public ResponseEntity<?> deleteDeviceToken(@RequestHeader("Authorization") String token,
+                                              @RequestBody com.example.smartnotesbackend.dto.DeviceTokenDTO dto) {
+        try {
+            String jwtToken = token.replace("Bearer ", "");
+            Long userId = authService.extractUserIdFromToken(jwtToken);
+
+            authService.deleteDeviceToken(userId, dto.getDeviceToken());
+            return ResponseEntity.ok(Map.of("message", "Device token deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to delete device token: " + e.getMessage()));
         }
     }
 }

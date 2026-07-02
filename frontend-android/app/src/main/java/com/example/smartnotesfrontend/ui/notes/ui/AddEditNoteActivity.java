@@ -1,17 +1,28 @@
-package com.example.smartnotesfrontend.notes.ui;
+package com.example.smartnotesfrontend.ui.notes.ui;
 
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 
 import com.example.smartnotesfrontend.R;
 import com.example.smartnotesfrontend.data.model.Note;
+import com.example.smartnotesfrontend.data.model.ScheduleMode;
 import com.example.smartnotesfrontend.data.remote.ApiService;
 import com.example.smartnotesfrontend.data.remote.RetrofitClient;
+
+import java.util.Calendar;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -21,8 +32,15 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
     private EditText edtTitle;
     private EditText edtContent;
-
     private Button btnSave;
+
+    private SwitchCompat switchSchedule;
+    private LinearLayout layoutScheduleOptions;
+    private Spinner spinnerMode;
+    private Button btnPickDate, btnPickTime;
+
+    private String selectedDate = "";
+    private String selectedTime = "";
 
     private boolean isEditMode = false;
 
@@ -41,12 +59,46 @@ public class AddEditNoteActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-
         edtTitle = findViewById(R.id.edtTitle);
-
         edtContent = findViewById(R.id.edtContent);
-
         btnSave = findViewById(R.id.btnSave);
+
+        switchSchedule = findViewById(R.id.switchSchedule);
+        layoutScheduleOptions = findViewById(R.id.layoutScheduleOptions);
+        spinnerMode = findViewById(R.id.spinnerMode);
+        btnPickDate = findViewById(R.id.btnPickDate);
+        btnPickTime = findViewById(R.id.btnPickTime);
+
+        // Setup Spinner
+        String[] modes = {"Mỗi ngày", "Chọn ngày"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, modes);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMode.setAdapter(adapter);
+
+        // Handle Switch
+        switchSchedule.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            layoutScheduleOptions.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+
+        // Handle Pickers
+        btnPickDate.setOnClickListener(v -> showDatePicker());
+        btnPickTime.setOnClickListener(v -> showTimePicker());
+    }
+
+    private void showDatePicker() {
+        Calendar c = Calendar.getInstance();
+        new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
+            selectedDate = String.format(Locale.getDefault(), "%04d-%02d-%02d", year, month + 1, dayOfMonth);
+            btnPickDate.setText(selectedDate);
+        }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void showTimePicker() {
+        Calendar c = Calendar.getInstance();
+        new TimePickerDialog(this, (view, hourOfDay, minute) -> {
+            selectedTime = String.format(Locale.getDefault(), "%02d:%02d:00", hourOfDay, minute);
+            btnPickTime.setText(selectedTime);
+        }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show();
     }
 
     private void getIntentData() {
@@ -72,8 +124,30 @@ public class AddEditNoteActivity extends AppCompatActivity {
                     );
 
             edtTitle.setText(title);
-
             edtContent.setText(content);
+
+            if (getIntent().hasExtra("note_schedule_mode")) {
+                String modeStr = getIntent().getStringExtra("note_schedule_mode");
+                if (modeStr != null) {
+                    switchSchedule.setChecked(true);
+                    layoutScheduleOptions.setVisibility(View.VISIBLE);
+                    if (modeStr.equals("EVERYDAY")) {
+                        spinnerMode.setSelection(0);
+                    } else {
+                        spinnerMode.setSelection(1);
+                    }
+                }
+            }
+
+            if (getIntent().hasExtra("note_schedule_date")) {
+                selectedDate = getIntent().getStringExtra("note_schedule_date");
+                btnPickDate.setText(selectedDate);
+            }
+
+            if (getIntent().hasExtra("note_notify_time")) {
+                selectedTime = getIntent().getStringExtra("note_notify_time");
+                btnPickTime.setText(selectedTime);
+            }
         }
     }
 
@@ -105,8 +179,18 @@ public class AddEditNoteActivity extends AppCompatActivity {
             Note note = new Note();
 
             note.setTitle(title);
-
             note.setContent(content);
+
+            if (switchSchedule.isChecked()) {
+                int pos = spinnerMode.getSelectedItemPosition();
+                note.setScheduleMode(pos == 0 ? ScheduleMode.EVERYDAY : ScheduleMode.SPECIFIC_DAY);
+                note.setScheduleDate(selectedDate.isEmpty() ? null : selectedDate);
+                note.setNotifyTime(selectedTime.isEmpty() ? null : selectedTime);
+            } else {
+                note.setScheduleMode(null);
+                note.setScheduleDate(null);
+                note.setNotifyTime(null);
+            }
 
             if (isEditMode) {
 

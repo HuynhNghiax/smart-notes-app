@@ -64,7 +64,11 @@ public class SearchService {
                 categoryColorCode,
                 note.getCreatedAt(),
                 note.getUpdatedAt(),
-                note.getIsPinned()
+                note.getIsPinned(),
+                note.getScheduleMode(),
+                note.getScheduleDate(),
+                null,
+                null
         );
     }
 }

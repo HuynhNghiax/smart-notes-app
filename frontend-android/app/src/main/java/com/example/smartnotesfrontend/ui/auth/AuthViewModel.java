@@ -3,7 +3,11 @@ package com.example.smartnotesfrontend.ui.auth;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+
+import com.example.smartnotesfrontend.data.model.RegisterRequest;
 import com.example.smartnotesfrontend.data.remote.RetrofitClient;
+import com.google.firebase.messaging.FirebaseMessaging;
+
 import java.util.HashMap;
 import java.util.Map;
 import retrofit2.Call;
@@ -43,24 +47,25 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void registerUser(String email, String password) {
-        Map<String, String> body = new HashMap<>();
-        body.put("email", email);
-        body.put("password", password);
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            String deviceToken = task.isSuccessful() ? task.getResult() : "";
+            RegisterRequest request = new RegisterRequest(email, password, deviceToken);
 
-        RetrofitClient.getApiService().register(body).enqueue(new Callback<Map<String, String>>() {
-            @Override
-            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
-                if (response.isSuccessful()) {
-                    authResult.setValue("REGISTER_SUCCESS");
-                } else {
-                    authResult.setValue("Lỗi: Email này đã tồn tại trong Database!");
+            RetrofitClient.getApiService().register(request).enqueue(new Callback<Map<String, String>>() {
+                @Override
+                public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                    if (response.isSuccessful()) {
+                        authResult.setValue("REGISTER_SUCCESS");
+                    } else {
+                        authResult.setValue("Lỗi: Email này đã tồn tại trong Database!");
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<Map<String, String>> call, Throwable t) {
-                authResult.setValue("Thất bại: Không thể kết nối tới Server Spring Boot!");
-            }
+                @Override
+                public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                    authResult.setValue("Thất bại: Không thể kết nối tới Server Spring Boot!");
+                }
+            });
         });
     }
 

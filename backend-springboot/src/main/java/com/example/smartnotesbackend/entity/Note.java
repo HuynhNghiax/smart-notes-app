@@ -1,8 +1,15 @@
 package com.example.smartnotesbackend.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+@Getter
+@Setter
 @Entity
 @Table(name = "notes")
 public class Note {
@@ -36,31 +43,18 @@ public class Note {
     @Column(name = "is_pinned")
     private Boolean isPinned = false;
 
+    @Column(name = "schedule_mode")
+    @Enumerated(EnumType.STRING)
+    private ScheduleMode scheduleMode;
+
+    @Column(name = "schedule_date")
+    private LocalDate scheduleDate;
+
+    @Column(name = "notify_time")
+    private LocalTime notifyTime;
+
+    @Column(name = "next_scheduled_at")
+    private LocalDateTime nextScheduledAt;
+
     public Note() {}
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
-
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-
-    public Long getUserId() { return userId; }
-
-    public Category getCategory() { return category; }
-    public void setCategory(Category category) { this.category = category; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    public Boolean getIsPinned() { return isPinned; }
-    public void setIsPinned(Boolean isPinned) { this.isPinned = isPinned; }
 }

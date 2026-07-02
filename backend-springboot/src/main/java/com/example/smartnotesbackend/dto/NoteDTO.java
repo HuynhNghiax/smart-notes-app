@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import com.example.smartnotesbackend.entity.ScheduleMode;
 
 @Data
 @NoArgsConstructor
@@ -20,4 +23,8 @@ public class NoteDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean isPinned;
+    private ScheduleMode scheduleMode;
+    private LocalDate scheduleDate;
+    private LocalTime notifyTime;
+    private LocalDateTime nextScheduledAt;
 }

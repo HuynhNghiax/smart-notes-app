@@ -1,8 +1,10 @@
 package com.example.smartnotesfrontend.ui.auth;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final String TAG = "LoginActivity";
     private static final int RC_SIGN_IN = 9001;
 
     private EditText edtEmail, edtPassword;
@@ -114,7 +117,24 @@ public class LoginActivity extends AppCompatActivity {
                     authViewModel.loginWithGoogle(idToken);
                 }
             } catch (ApiException e) {
-                Toast.makeText(this, "Lỗi kết nối tài khoản Google: " + e.getStatusCode(), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Google sign in failed", e);
+                Log.e(TAG, "Status code: " + e.getStatusCode());
+                Log.e(TAG, "Message: " + e.getMessage());
+
+                String errorMsg = "Lỗi Google (" + e.getStatusCode() + "): ";
+                switch (e.getStatusCode()) {
+                    case 7: errorMsg += "Mạng không ổn định"; break;
+                    case 10: errorMsg += "Sai cấu hình (SHA-1 hoặc Client ID)"; break;
+                    case 12500: errorMsg += "Google Play Services gặp lỗi"; break;
+                    case 12501: errorMsg += "Người dùng đã hủy đăng nhập"; break;
+                    default: errorMsg += e.getMessage();
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Lỗi Đăng nhập Google")
+                        .setMessage(errorMsg + "\n\nHãy kiểm tra logcat để biết thêm chi tiết.")
+                        .setPositiveButton("OK", null)
+                        .show();
             }
         }
     }

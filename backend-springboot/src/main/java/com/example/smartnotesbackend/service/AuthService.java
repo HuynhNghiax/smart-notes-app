@@ -1,7 +1,9 @@
 package com.example.smartnotesbackend.service;
 
 import com.example.smartnotesbackend.entity.User;
+import com.example.smartnotesbackend.entity.DeviceToken;
 import com.example.smartnotesbackend.repository.UserRepository;
+import com.example.smartnotesbackend.repository.DeviceTokenRepository;
 import com.example.smartnotesbackend.util.JwtUtil;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -14,6 +16,7 @@ import java.util.Random;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final DeviceTokenRepository deviceTokenRepository;
     private final JavaMailSender mailSender;
     private final JwtUtil jwtUtil;
 
@@ -21,8 +24,12 @@ public class AuthService {
     private final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder =
             new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
 
-    public AuthService(UserRepository userRepository, JavaMailSender mailSender, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, 
+                       DeviceTokenRepository deviceTokenRepository,
+                       JavaMailSender mailSender, 
+                       JwtUtil jwtUtil) {
         this.userRepository = userRepository;
+        this.deviceTokenRepository = deviceTokenRepository;
         this.mailSender = mailSender;
         this.jwtUtil = jwtUtil;
     }
@@ -179,5 +186,62 @@ public class AuthService {
     // Hàm giải mã token để lấy userId — dùng cho CategoryController và SearchController
     public Long extractUserIdFromToken(String token) {
         return jwtUtil.extractUserId(token);
+    }
+
+    // Lưu device token cho user mới sau khi register
+    public void saveDeviceTokenForNewUser(String email, String deviceToken) {
+        if (deviceToken == null || deviceToken.trim().isEmpty()) {
+            return;
+        }
+
+        Optional<com.example.smartnotesbackend.entity.User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            saveOrUpdateDeviceToken(userOpt.get().getId(), deviceToken);
+        }
+    }
+
+    // Lưu device token dựa vào email (dùng khi đăng nhập)
+    public void saveDeviceTokenForEmail(String email, String deviceToken) {
+        if (deviceToken == null || deviceToken.trim().isEmpty()) {
+            return;
+        }
+
+        Optional<com.example.smartnotesbackend.entity.User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            saveOrUpdateDeviceToken(userOpt.get().getId(), deviceToken);
+        }
+    }
+
+    // Lưu hoặc cập nhật Firebase device token cho user
+    public void saveOrUpdateDeviceToken(Long userId, String deviceToken) {
+        if (deviceToken == null || deviceToken.trim().isEmpty()) {
+            return;
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Kiểm tra token đã tồn tại chưa
+        Optional<DeviceToken> existingToken = deviceTokenRepository.findByUserId(userId)
+                .stream()
+                .filter(dt -> dt.getToken().equals(deviceToken))
+                .findFirst();
+
+        if (existingToken.isPresent()) {
+            // Cập nhật thời gian
+            DeviceToken token = existingToken.get();
+            token.setUpdatedAt(LocalDateTime.now());
+            deviceTokenRepository.save(token);
+        } else {
+            // Tạo mới
+            DeviceToken newToken = new DeviceToken(user, deviceToken);
+            deviceTokenRepository.save(newToken);
+            System.out.println(">>> [DEVICE TOKEN] Saved new device token for user: " + userId);
+        }
+    }
+
+    // Xóa device token
+    public void deleteDeviceToken(Long userId, String deviceToken) {
+        deviceTokenRepository.deleteByUserIdAndToken(userId, deviceToken);
     }
 }

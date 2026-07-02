@@ -20,6 +20,41 @@
         android:hint="Content"
         android:layout_marginTop="16dp"/>
 
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/switchSchedule"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Enable Schedule" />
+
+    <LinearLayout
+        android:id="@+id/layoutScheduleOptions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <Spinner
+            android:id="@+id/spinnerMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <Button
+            android:id="@+id/btnPickDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Select Date" />
+
+        <Button
+            android:id="@+id/btnPickTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Select Time" />
+    </LinearLayout>
+
     <Button
         android:id="@+id/btnSave"
         android:layout_width="match_parent"

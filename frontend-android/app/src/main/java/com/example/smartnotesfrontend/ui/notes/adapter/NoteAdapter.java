@@ -1,4 +1,4 @@
-package com.example.smartnotesfrontend.notes.adapter;
+package com.example.smartnotesfrontend.ui.notes.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;

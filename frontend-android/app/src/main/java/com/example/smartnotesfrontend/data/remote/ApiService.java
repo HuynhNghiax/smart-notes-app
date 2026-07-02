@@ -1,5 +1,6 @@
 package com.example.smartnotesfrontend.data.remote;
 
+import com.example.smartnotesfrontend.data.model.RegisterRequest;
 import com.example.smartnotesfrontend.data.model.AiResponse;
 import com.example.smartnotesfrontend.data.model.Note;
 
@@ -7,13 +8,11 @@ import java.util.Map;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.*;
-import retrofit2.http.Body;
-import retrofit2.http.POST;
 
 public interface ApiService {
 
     @POST("api/auth/register")
-    Call<Map<String, String>> register(@Body Map<String, String> body);
+    Call<Map<String, String>> register(@Body RegisterRequest body);
 
     @POST("api/auth/verify-otp")
     Call<Map<String, String>> verifyOtp(@Body Map<String, String> body);

@@ -2,10 +2,14 @@ package com.example.smartnotesbackend.service;
 
 import com.example.smartnotesbackend.entity.Note;
 import com.example.smartnotesbackend.entity.User;
+import com.example.smartnotesbackend.entity.ScheduleMode;
 import com.example.smartnotesbackend.repository.NoteRepository;
 import com.example.smartnotesbackend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -28,6 +32,9 @@ public class NoteService {
 
         note.setUser(user);
 
+        // Compute next scheduled time based on provided fields
+        note.setNextScheduledAt(computeNextScheduledAt(note));
+
         return noteRepository.save(note);
     }
 
@@ -44,6 +51,20 @@ public class NoteService {
 
         note.setTitle(updatedNote.getTitle());
         note.setContent(updatedNote.getContent());
+        
+        // Update schedule fields if provided
+        if (updatedNote.getScheduleMode() != null) {
+            note.setScheduleMode(updatedNote.getScheduleMode());
+        }
+        if (updatedNote.getScheduleDate() != null) {
+            note.setScheduleDate(updatedNote.getScheduleDate());
+        }
+        if (updatedNote.getNotifyTime() != null) {
+            note.setNotifyTime(updatedNote.getNotifyTime());
+        }
+
+        // Recompute next scheduled time
+        note.setNextScheduledAt(computeNextScheduledAt(note));
 
         return noteRepository.save(note);
     }
@@ -51,5 +72,34 @@ public class NoteService {
     // DELETE
     public void deleteNote(Long id) {
         noteRepository.deleteById(id);
+    }
+
+    // Compute next scheduled LocalDateTime based on scheduleMode, scheduleDate and notifyTime
+    public LocalDateTime computeNextScheduledAt(Note note) {
+        if (note.getScheduleMode() == null) return null;
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalTime notifyTime = note.getNotifyTime() != null ? note.getNotifyTime() : LocalTime.of(9, 0);
+
+        if (note.getScheduleMode() == ScheduleMode.EVERYDAY) {
+            LocalDate today = LocalDate.now();
+            LocalDateTime candidate = LocalDateTime.of(today, notifyTime);
+            if (candidate.isAfter(now)) {
+                return candidate;
+            } else {
+                return candidate.plusDays(1);
+            }
+        } else if (note.getScheduleMode() == ScheduleMode.SPECIFIC_DAY) {
+            if (note.getScheduleDate() == null) return null;
+            LocalDateTime candidate = LocalDateTime.of(note.getScheduleDate(), notifyTime);
+            if (candidate.isAfter(now)) {
+                return candidate;
+            } else {
+                // Specific day already passed
+                return null;
+            }
+        }
+
+        return null;
     }
 }

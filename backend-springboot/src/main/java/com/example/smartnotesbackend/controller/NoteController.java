@@ -1,5 +1,6 @@
 package com.example.smartnotesbackend.controller;
 
+import com.example.smartnotesbackend.dto.NoteDTO;
 import com.example.smartnotesbackend.entity.Note;
 import com.example.smartnotesbackend.service.NoteService;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,18 @@ public class NoteController {
     public Note createNote(@PathVariable Long userId,
                            @RequestBody Note note) {
 
+        return noteService.createNote(userId, note);
+    }
+
+    // Create with DTO
+    @PostMapping("/dto/{userId}")
+    public Note createNoteWithDto(@PathVariable Long userId,
+                                  @RequestBody NoteDTO noteDTO) {
+        Note note = new Note();
+        note.setTitle(noteDTO.getTitle());
+        note.setContent(noteDTO.getContent());
+        note.setScheduleMode(noteDTO.getScheduleMode());
+        note.setScheduleDate(noteDTO.getScheduleDate());
         return noteService.createNote(userId, note);
     }
 

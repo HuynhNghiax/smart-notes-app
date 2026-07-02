@@ -5,6 +5,9 @@ public class Note {
     private Long id;
     private String title;
     private String content;
+    private ScheduleMode scheduleMode;
+    private String scheduleDate; // Using String for simplicity with Retrofit/Gson if no custom adapter
+    private String notifyTime;
 
     public Note() {
     }
@@ -37,5 +40,29 @@ public class Note {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public ScheduleMode getScheduleMode() {
+        return scheduleMode;
+    }
+
+    public void setScheduleMode(ScheduleMode scheduleMode) {
+        this.scheduleMode = scheduleMode;
+    }
+
+    public String getScheduleDate() {
+        return scheduleDate;
+    }
+
+    public void setScheduleDate(String scheduleDate) {
+        this.scheduleDate = scheduleDate;
+    }
+
+    public String getNotifyTime() {
+        return notifyTime;
+    }
+
+    public void setNotifyTime(String notifyTime) {
+        this.notifyTime = notifyTime;
     }
 }
