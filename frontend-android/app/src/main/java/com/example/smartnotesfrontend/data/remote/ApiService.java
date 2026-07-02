@@ -32,12 +32,12 @@ public interface ApiService {
 
     // NOTES APIs
 
-    @GET("api/notes/{userId}")
-    Call<List<Note>> getNotes(@Path("userId") Long userId);
+    @GET("api/notes")
+    Call<List<Note>> getNotes(@Header("Authorization") String token);
 
-    @POST("api/notes/{userId}")
+    @POST("api/notes")
     Call<Note> createNote(
-            @Path("userId") Long userId,
+            @Header("Authorization") String token,
             @Body Note note
     );
 

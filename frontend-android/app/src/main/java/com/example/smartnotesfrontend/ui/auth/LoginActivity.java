@@ -3,6 +3,7 @@ package com.example.smartnotesfrontend.ui.auth;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
@@ -107,14 +108,11 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void loginWithGoogleManager() {
-        // LƯU Ý: serverClientId này đang có project number 648616238662
-        // Trong khi google-services.json của bạn là 748114122843.
-        // Đây có thể là nguyên nhân gây lỗi "No credentials available".
         String serverClientId = "648616238662-u9uuojremvv9leppin6pm3daqu16416j.apps.googleusercontent.com";
 
         GetGoogleIdOption googleIdOption = new GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(serverClientId)
+                .setFilterByAuthorizedAccounts(false)
                 .setAutoSelectEnabled(false) // Tắt tự động chọn để hiện bảng chọn tài khoản
                 .build();
 
@@ -135,35 +133,72 @@ public class LoginActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(@NonNull GetCredentialException e) {
-                        String errorMsg = e.getMessage();
-                        if (errorMsg != null && errorMsg.contains("No credentials available")) {
-                            errorMsg = "Không tìm thấy tài khoản Google phù hợp. Vui lòng kiểm tra SHA-1 và Client ID.";
+
+                        Log.e("GoogleLogin", "========== GOOGLE LOGIN ERROR ==========");
+                        Log.e("GoogleLogin", "Exception = " + e.getClass().getName());
+                        Log.e("GoogleLogin", "Message   = " + e.getMessage());
+
+                        Throwable cause = e.getCause();
+                        if (cause != null) {
+                            Log.e("GoogleLogin", "Cause     = " + cause.getClass().getName());
+                            Log.e("GoogleLogin", "Cause Msg = " + cause.getMessage());
                         }
-                        Toast.makeText(LoginActivity.this, "Lỗi xác thực: " + errorMsg, Toast.LENGTH_LONG).show();
-                        android.util.Log.e("LoginActivity", "Google login error", e);
+
+                        e.printStackTrace();
+
+                        Toast.makeText(
+                                LoginActivity.this,
+                                e.getClass().getSimpleName() + "\n" + e.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show();
                     }
                 }
         );
     }
 
     private void handleGoogleSignInResult(GetCredentialResponse result) {
+
         Credential credential = result.getCredential();
 
+        Log.d("GoogleLogin", "Credential class = " + credential.getClass().getName());
+        Log.d("GoogleLogin", "Credential type = " + credential.getType());
+
         if (credential instanceof CustomCredential &&
-                credential.getType().equals(GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL)) {
+                GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType())) {
+
             try {
-                GoogleIdTokenCredential googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.getData());
-                String idToken = googleIdTokenCredential.getIdToken();
 
-                Toast.makeText(this, "Xác thực thành công! Đang đăng nhập...", Toast.LENGTH_SHORT).show();
-                // GỬI TOKEN LÊN BACKEND
-                authViewModel.loginWithGoogle(idToken);
+                GoogleIdTokenCredential googleCredential =
+                        GoogleIdTokenCredential.createFrom(credential.getData());
 
-            } catch (Exception e) {
-                Toast.makeText(this, "Lỗi xử lý dữ liệu Google: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.d("GoogleLogin", "Google User = " + googleCredential.getDisplayName());
+                Log.d("GoogleLogin", "Email = " + googleCredential.getId());
+                Log.d("GoogleLogin", "Token length = " + googleCredential.getIdToken().length());
+
+                authViewModel.loginWithGoogle(
+                        googleCredential.getIdToken()
+                );
+
+            } catch (Exception ex) {
+
+                Log.e("GoogleLogin", "Parse token failed", ex);
+
+                Toast.makeText(
+                        this,
+                        ex.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show();
             }
+
         } else {
-            Toast.makeText(this, "Loại xác thực không được hỗ trợ", Toast.LENGTH_SHORT).show();
+
+            Log.e("GoogleLogin", "Unsupported credential: " + credential.getType());
+
+            Toast.makeText(
+                    this,
+                    "Unsupported credential",
+                    Toast.LENGTH_LONG
+            ).show();
         }
     }
 

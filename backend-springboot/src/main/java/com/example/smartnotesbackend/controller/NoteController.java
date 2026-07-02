@@ -2,6 +2,7 @@ package com.example.smartnotesbackend.controller;
 
 import com.example.smartnotesbackend.dto.NoteDTO;
 import com.example.smartnotesbackend.entity.Note;
+import com.example.smartnotesbackend.service.AuthService;
 import com.example.smartnotesbackend.service.NoteService;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,23 +14,26 @@ import java.util.List;
 public class NoteController {
 
     private final NoteService noteService;
+    private final AuthService authService;
 
-    public NoteController(NoteService noteService) {
+    public NoteController(NoteService noteService, AuthService authService) {
         this.noteService = noteService;
+        this.authService = authService;
     }
 
     // CREATE
-    @PostMapping("/{userId}")
-    public Note createNote(@PathVariable Long userId,
+    @PostMapping
+    public Note createNote(@RequestHeader("Authorization") String token,
                            @RequestBody Note note) {
-
+        Long userId = authService.extractUserIdFromToken(token.replace("Bearer ", ""));
         return noteService.createNote(userId, note);
     }
 
     // Create with DTO
-    @PostMapping("/dto/{userId}")
-    public Note createNoteWithDto(@PathVariable Long userId,
+    @PostMapping("/dto")
+    public Note createNoteWithDto(@RequestHeader("Authorization") String token,
                                   @RequestBody NoteDTO noteDTO) {
+        Long userId = authService.extractUserIdFromToken(token.replace("Bearer ", ""));
         Note note = new Note();
         note.setTitle(noteDTO.getTitle());
         note.setContent(noteDTO.getContent());
@@ -39,9 +43,9 @@ public class NoteController {
     }
 
     // READ
-    @GetMapping("/{userId}")
-    public List<Note> getNotes(@PathVariable Long userId) {
-
+    @GetMapping
+    public List<Note> getNotes(@RequestHeader("Authorization") String token) {
+        Long userId = authService.extractUserIdFromToken(token.replace("Bearer ", ""));
         return noteService.getNotesByUser(userId);
     }
 

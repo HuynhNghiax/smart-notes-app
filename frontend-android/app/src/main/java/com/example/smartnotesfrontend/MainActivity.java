@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton fabAddNote;
     private FloatingActionButton btnAi;
     private FloatingActionButton fabCategory;
+    private FloatingActionButton fabSearch;
 
     private NoteAdapter adapter;
     private List<Note> noteList = new ArrayList<>();
@@ -72,6 +73,8 @@ public class MainActivity extends AppCompatActivity {
 
         setupCategoryButton();
 
+        setupSearchButton();
+
         loadNotes();
 
         askNotificationPermission();
@@ -83,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
         fabAddNote = findViewById(R.id.fabAddNote);
         btnAi = findViewById(R.id.btnAi);
         fabCategory = findViewById(R.id.fabCategory);
+        fabSearch = findViewById(R.id.fabSearch);
     }
 
     private void setupRecyclerView() {
@@ -107,9 +111,17 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void setupSearchButton() {
+        fabSearch.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.smartnotesfrontend.ui.search.SearchActivity.class);
+            startActivity(intent);
+        });
+    }
+
     private void loadNotes() {
         ApiService apiService = RetrofitClient.getApiService();
-        apiService.getNotes(1L).enqueue(new Callback<List<Note>>() {
+        String token = SharedPrefManager.getInstance(this).getToken();
+        apiService.getNotes("Bearer " + token).enqueue(new Callback<List<Note>>() {
             @Override
             public void onResponse(@NonNull Call<List<Note>> call, @NonNull Response<List<Note>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -260,7 +272,8 @@ public class MainActivity extends AppCompatActivity {
         note.setTitle(title);
         note.setContent(content);
 
-        RetrofitClient.getApiService().createNote(userId, note).enqueue(new Callback<Note>() {
+        String token = SharedPrefManager.getInstance(this).getToken();
+        RetrofitClient.getApiService().createNote("Bearer " + token, note).enqueue(new Callback<Note>() {
             @Override
             public void onResponse(@NonNull Call<Note> call, @NonNull Response<Note> response) {
                 if (response.isSuccessful()) {

@@ -19,6 +19,7 @@
             android:background="#3F51B5"
             app:title="Smart Notes"
             app:titleTextColor="#FFFFFF" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -29,13 +30,14 @@
         android:clipToPadding="false"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
+    <!-- Category -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCategory"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="176dp"
+        android:layout_marginBottom="252dp"
         android:contentDescription="Quản lý danh mục"
         android:src="@android:drawable/ic_menu_agenda"
         app:backgroundTint="#FF9800"
@@ -43,6 +45,22 @@
         app:maxImageSize="32dp"
         app:tint="#FFFFFF" />
 
+    <!-- Search -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabSearch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="176dp"
+        android:contentDescription="Search"
+        android:src="@android:drawable/ic_menu_search"
+        app:backgroundTint="#4CAF50"
+        app:fabCustomSize="56dp"
+        app:maxImageSize="32dp"
+        app:tint="#FFFFFF" />
+
+    <!-- AI -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnAi"
         android:layout_width="wrap_content"
@@ -57,6 +75,7 @@
         app:maxImageSize="32dp"
         app:tint="#FFFFFF" />
 
+    <!-- Add -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddNote"
         android:layout_width="wrap_content"

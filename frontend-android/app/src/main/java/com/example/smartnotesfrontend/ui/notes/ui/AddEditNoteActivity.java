@@ -273,7 +273,9 @@ public class AddEditNoteActivity extends AppCompatActivity {
                         .getRetrofitInstance()
                         .create(ApiService.class);
 
-        apiService.createNote(1L, note)
+        String token = SharedPrefManager.getInstance(this).getToken();
+
+        apiService.createNote("Bearer " + token, note)
                 .enqueue(new Callback<Note>() {
 
                     @Override
