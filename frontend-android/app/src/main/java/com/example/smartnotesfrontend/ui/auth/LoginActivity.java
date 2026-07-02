@@ -1,40 +1,41 @@
 package com.example.smartnotesfrontend.ui.auth;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialException;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
+
 import com.example.smartnotesfrontend.MainActivity;
 import com.example.smartnotesfrontend.R;
 import com.example.smartnotesfrontend.utils.SharedPrefManager;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.Task;
 
 public class LoginActivity extends AppCompatActivity {
-
-    private static final String TAG = "LoginActivity";
-    private static final int RC_SIGN_IN = 9001;
 
     private EditText edtEmail, edtPassword;
     private Button btnLogin;
     private MaterialButton btnGoogleLogin;
     private TextView tvRegisterLink, tvForgotPassword;
     private AuthViewModel authViewModel;
-    private GoogleSignInClient mGoogleSignInClient;
+    private CredentialManager credentialManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +43,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        credentialManager = CredentialManager.create(this);
 
         edtEmail = findViewById(R.id.edtEmail);
         edtPassword = findViewById(R.id.edtPassword);
@@ -50,19 +52,8 @@ public class LoginActivity extends AppCompatActivity {
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
-        // CẤU HÌNH ĐĂNG NHẬP GOOGLE VỚI ID THẬT CỦA BẠN
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("740919720022-7r318pifh78uvflu9l2scsl2mmad3hd5.apps.googleusercontent.com")
-                .requestEmail()
-                .build();
-
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
-        // Sự kiện bấm nút Google mở bảng chọn tài khoản
-        btnGoogleLogin.setOnClickListener(v -> {
-            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-            startActivityForResult(signInIntent, RC_SIGN_IN);
-        });
+        // Sự kiện bấm nút Google sử dụng Credential Manager mới
+        btnGoogleLogin.setOnClickListener(v -> loginWithGoogleManager());
 
         // Sự kiện chuyển sang màn hình Đăng ký
         tvRegisterLink.setOnClickListener(v -> {
@@ -82,11 +73,14 @@ public class LoginActivity extends AppCompatActivity {
         // LẮNG NGHE TÍN HIỆU PHẢN HỒI (Áp dụng chung cho cả Đăng nhập thường và Đăng nhập Google)
         authViewModel.getAuthResult().observe(this, result -> {
             if (result != null) {
-                // BUG FIX: Token JWT thật không bắt đầu bằng "LOGIN_SUCCESS"
-                // Chỉ từ chối khi là lỗi rõ ràng, còn lại đều là token hợp lệ
-                if (!result.equals("WRONG_CREDENTIALS") && !result.equals("ACCOUNT_NOT_ACTIVATED")) {
-                    // Lưu token vào SharedPref để các màn hình khác dùng
-                    SharedPrefManager.getInstance(LoginActivity.this).saveToken(result);
+                // Kiểm tra nếu là tín hiệu đăng nhập thành công
+                if (result.startsWith("LOGIN_SUCCESS:")) {
+                    // Cắt bỏ tiền tố "LOGIN_SUCCESS:" để lấy JWT thực tế
+                    String jwtToken = result.substring("LOGIN_SUCCESS:".length());
+                    
+                    // Lưu JWT vào SharedPref
+                    SharedPrefManager.getInstance(LoginActivity.this).saveToken(jwtToken);
+                    
                     Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
 
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
@@ -94,48 +88,65 @@ public class LoginActivity extends AppCompatActivity {
 
                     authViewModel.clearResult();
                     finish();
-                } else {
+                } else if (result.equals("WRONG_CREDENTIALS") || result.equals("ACCOUNT_NOT_ACTIVATED") || result.startsWith("Lỗi:")) {
+                    // Hiển thị thông báo lỗi
                     Toast.makeText(this, result, Toast.LENGTH_LONG).show();
                 }
             }
         });
     }
 
-    // Hứng dữ liệu sau khi người dùng chọn xong tài khoản Google công khai
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+    private void loginWithGoogleManager() {
+        // NOTE: Replace with your actual Web Client ID from Google Cloud Console
+        String serverClientId = "648616238662-u9uuojremvv9leppin6pm3daqu16416j.apps.googleusercontent.com";
+
+        GetGoogleIdOption googleIdOption = new GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(serverClientId)
+                .setAutoSelectEnabled(true)
+                .build();
+
+        GetCredentialRequest request = new GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build();
+
+        credentialManager.getCredentialAsync(
+                this,
+                request,
+                null,
+                ContextCompat.getMainExecutor(this),
+                new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
+                    @Override
+                    public void onResult(@NonNull GetCredentialResponse result) {
+                        handleGoogleSignInResult(result);
+                    }
+
+                    @Override
+                    public void onError(@NonNull GetCredentialException e) {
+                        Toast.makeText(LoginActivity.this, "Lỗi xác thực: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    private void handleGoogleSignInResult(GetCredentialResponse result) {
+        Credential credential = result.getCredential();
+
+        if (credential instanceof CustomCredential &&
+                credential.getType().equals(GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL)) {
             try {
-                GoogleSignInAccount account = task.getResult(ApiException.class);
-                if (account != null) {
-                    String idToken = account.getIdToken();
-                    Toast.makeText(this, "Xác thực Google thành công! Đang đồng bộ...", Toast.LENGTH_SHORT).show();
+                GoogleIdTokenCredential googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.getData());
+                String idToken = googleIdTokenCredential.getIdToken();
 
-                    // CHÍNH XÁC: Đã mở khóa lệnh kích hoạt - Bắn trực tiếp idToken này lên endpoint mạng thời gian thực
-                    authViewModel.loginWithGoogle(idToken);
-                }
-            } catch (ApiException e) {
-                Log.e(TAG, "Google sign in failed", e);
-                Log.e(TAG, "Status code: " + e.getStatusCode());
-                Log.e(TAG, "Message: " + e.getMessage());
+                Toast.makeText(this, "Xác thực thành công! Đang đăng nhập...", Toast.LENGTH_SHORT).show();
+                // GỬI TOKEN LÊN BACKEND
+                authViewModel.loginWithGoogle(idToken);
 
-                String errorMsg = "Lỗi Google (" + e.getStatusCode() + "): ";
-                switch (e.getStatusCode()) {
-                    case 7: errorMsg += "Mạng không ổn định"; break;
-                    case 10: errorMsg += "Sai cấu hình (SHA-1 hoặc Client ID)"; break;
-                    case 12500: errorMsg += "Google Play Services gặp lỗi"; break;
-                    case 12501: errorMsg += "Người dùng đã hủy đăng nhập"; break;
-                    default: errorMsg += e.getMessage();
-                }
-
-                new AlertDialog.Builder(this)
-                        .setTitle("Lỗi Đăng nhập Google")
-                        .setMessage(errorMsg + "\n\nHãy kiểm tra logcat để biết thêm chi tiết.")
-                        .setPositiveButton("OK", null)
-                        .show();
+            } catch (Exception e) {
+                Toast.makeText(this, "Lỗi xử lý dữ liệu Google: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
+        } else {
+            Toast.makeText(this, "Loại xác thực không được hỗ trợ", Toast.LENGTH_SHORT).show();
         }
     }
 

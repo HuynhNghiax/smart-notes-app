@@ -24,25 +24,29 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void loginUser(String email, String password) {
-        Map<String, String> body = new HashMap<>();
-        body.put("email", email);
-        body.put("password", password);
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            String deviceToken = task.isSuccessful() ? task.getResult() : "";
+            Map<String, String> body = new HashMap<>();
+            body.put("email", email);
+            body.put("password", password);
+            body.put("deviceToken", deviceToken);
 
-        RetrofitClient.getApiService().login(body).enqueue(new Callback<Map<String, String>>() {
-            @Override
-            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    String token = response.body().get("token");
-                    authResult.setValue("LOGIN_SUCCESS:" + token);
-                } else {
-                    authResult.setValue("Lỗi: Tài khoản/mật khẩu sai hoặc tài khoản chưa kích hoạt!");
+            RetrofitClient.getApiService().login(body).enqueue(new Callback<Map<String, String>>() {
+                @Override
+                public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String token = response.body().get("token");
+                        authResult.setValue("LOGIN_SUCCESS:" + token);
+                    } else {
+                        authResult.setValue("Lỗi: Tài khoản/mật khẩu sai hoặc tài khoản chưa kích hoạt!");
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<Map<String, String>> call, Throwable t) {
-                authResult.setValue("Thất bại: Server Spring Boot chưa bật hoặc sai IP!");
-            }
+                @Override
+                public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                    authResult.setValue("Thất bại: Server Spring Boot chưa bật hoặc sai IP!");
+                }
+            });
         });
     }
 
@@ -136,24 +140,28 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void loginWithGoogle(String idToken) {
-        Map<String, String> body = new HashMap<>();
-        body.put("idToken", idToken);
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            String deviceToken = task.isSuccessful() ? task.getResult() : "";
+            Map<String, String> body = new HashMap<>();
+            body.put("idToken", idToken);
+            body.put("deviceToken", deviceToken);
 
-        RetrofitClient.getApiService().loginWithGoogle(body).enqueue(new Callback<Map<String, String>>() {
-            @Override
-            public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    String token = response.body().get("token");
-                    authResult.setValue("LOGIN_SUCCESS:" + token);
-                } else {
-                    authResult.setValue("Lỗi: Server Google từ chối xác thực Token này!");
+            RetrofitClient.getApiService().loginWithGoogle(body).enqueue(new Callback<Map<String, String>>() {
+                @Override
+                public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String token = response.body().get("token");
+                        authResult.setValue("LOGIN_SUCCESS:" + token);
+                    } else {
+                        authResult.setValue("Lỗi: Server Google từ chối xác thực Token này!");
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<Map<String, String>> call, Throwable t) {
-                authResult.setValue("Thất bại: Không thể gửi Token Google lên Server Spring Boot!");
-            }
+                @Override
+                public void onFailure(Call<Map<String, String>> call, Throwable t) {
+                    authResult.setValue("Thất bại: Không thể gửi Token Google lên Server Spring Boot!");
+                }
+            });
         });
     }
 }

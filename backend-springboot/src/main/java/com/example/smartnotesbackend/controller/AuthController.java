@@ -18,7 +18,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    private static final String GOOGLE_CLIENT_ID = "740919720022-7r318pifh78uvflu9l2scsl2mmad3hd5.apps.googleusercontent.com";
+    private static final String GOOGLE_CLIENT_ID = "648616238662-u9uuojremvv9leppin6pm3daqu16416j.apps.googleusercontent.com";
 
     public AuthController(AuthService authService) {
         this.authService = authService;

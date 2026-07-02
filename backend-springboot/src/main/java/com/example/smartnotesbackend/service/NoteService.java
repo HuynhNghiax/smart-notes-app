@@ -45,7 +45,6 @@ public class NoteService {
 
     // UPDATE
     public Note updateNote(Long id, Note updatedNote) {
-
         Note note = noteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Note not found"));
 
@@ -53,15 +52,9 @@ public class NoteService {
         note.setContent(updatedNote.getContent());
         
         // Update schedule fields if provided
-        if (updatedNote.getScheduleMode() != null) {
-            note.setScheduleMode(updatedNote.getScheduleMode());
-        }
-        if (updatedNote.getScheduleDate() != null) {
-            note.setScheduleDate(updatedNote.getScheduleDate());
-        }
-        if (updatedNote.getNotifyTime() != null) {
-            note.setNotifyTime(updatedNote.getNotifyTime());
-        }
+        note.setScheduleMode(updatedNote.getScheduleMode());
+        note.setScheduleDate(updatedNote.getScheduleDate());
+        note.setNotifyTime(updatedNote.getNotifyTime());
 
         // Recompute next scheduled time
         note.setNextScheduledAt(computeNextScheduledAt(note));
