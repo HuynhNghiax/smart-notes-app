@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F5F5">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerNotes"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:padding="8dp"
+        android:clipToPadding="false"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddNote"
@@ -17,25 +19,23 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
+        android:layout_margin="20dp"
+        android:contentDescription="Add Note"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="#6200EE"/>
+        app:backgroundTint="#6200EE"
+        app:tint="@android:color/white"/>
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnAi"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@id/fabAddNote"
-        android:layout_alignStart="@id/fabAddNote"
+        android:layout_alignEnd="@id/fabAddNote"
         android:layout_marginBottom="16dp"
-
-        app:fabCustomSize="56dp"
-
-        app:backgroundTint="#4285F4"
-
-        app:tint="@android:color/white"
+        android:contentDescription="AI Assistant"
         android:src="@drawable/noun_ai_8397680"
-
-        android:scaleType="fitCenter"
-        app:maxImageSize="32dp" />
+        app:backgroundTint="#4285F4"
+        app:maxImageSize="30dp"
+        app:tint="@android:color/white"/>
 
 </RelativeLayout>

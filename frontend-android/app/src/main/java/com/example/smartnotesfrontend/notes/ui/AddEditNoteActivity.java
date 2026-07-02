@@ -24,6 +24,8 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
     private Button btnSave;
 
+    private ApiService apiService;
+
     private boolean isEditMode = false;
 
     private Long noteId = null;
@@ -32,6 +34,8 @@ public class AddEditNoteActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_edit_note);
+
+        apiService = RetrofitClient.getApiService();
 
         initViews();
 
@@ -72,8 +76,11 @@ public class AddEditNoteActivity extends AppCompatActivity {
                     );
 
             edtTitle.setText(title);
-
             edtContent.setText(content);
+
+            setTitle("Edit Note");
+        } else {
+            setTitle("Add Note");
         }
     }
 
@@ -122,12 +129,16 @@ public class AddEditNoteActivity extends AppCompatActivity {
     // CREATE
     private void createNote(Note note) {
 
-        ApiService apiService =
-                RetrofitClient
-                        .getRetrofitInstance()
-                        .create(ApiService.class);
+        Long userId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                .getLong("USER_ID", 1L);
+        if (userId == -1L) {
+            Toast.makeText(this,
+                    "Không tìm thấy thông tin người dùng",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        apiService.createNote(1L, note)
+        apiService.createNote(userId, note)
                 .enqueue(new Callback<Note>() {
 
                     @Override
@@ -148,11 +159,30 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
                         } else {
 
-                            Toast.makeText(
-                                    AddEditNoteActivity.this,
-                                    "Create failed",
-                                    Toast.LENGTH_SHORT
-                            ).show();
+                            try {
+
+                                String error = "";
+
+                                if (response.errorBody() != null) {
+                                    error = response.errorBody().string();
+                                }
+
+                                Toast.makeText(
+                                        AddEditNoteActivity.this,
+                                        "Code: " + response.code(),
+                                        Toast.LENGTH_LONG
+                                ).show();
+
+                                android.util.Log.e(
+                                        "CREATE_NOTE",
+                                        "Code=" + response.code() + "\n" + error
+                                );
+
+                            } catch (Exception e) {
+
+                                e.printStackTrace();
+                            }
+
                         }
                     }
 
@@ -173,11 +203,6 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
     // UPDATE
     private void updateNote(Note note) {
-
-        ApiService apiService =
-                RetrofitClient
-                        .getRetrofitInstance()
-                        .create(ApiService.class);
 
         apiService.updateNote(noteId, note)
                 .enqueue(new Callback<Note>() {
@@ -202,7 +227,7 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
                             Toast.makeText(
                                     AddEditNoteActivity.this,
-                                    "Update failed",
+                                    "Update failed: " + response.code(),
                                     Toast.LENGTH_SHORT
                             ).show();
                         }

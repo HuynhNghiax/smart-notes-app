@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -22,10 +21,8 @@ import com.example.smartnotesfrontend.data.remote.ApiService;
 import com.example.smartnotesfrontend.data.remote.RetrofitClient;
 import com.example.smartnotesfrontend.notes.adapter.NoteAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.example.smartnotesfrontend.data.model.AiResponse;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +35,9 @@ public class NotesActivity extends AppCompatActivity {
 
     private RecyclerView recyclerNotes;
     private FloatingActionButton fabAddNote;
-
-    private NoteAdapter adapter;
     private FloatingActionButton btnAi;
-    private List<Note> noteList; // Danh sách note của user hiện tại
+
+    private List<Note> noteList = new ArrayList<>();
     private NoteAdapter noteAdapter;
 
     // Tự refresh khi quay lại từ Add/Edit
@@ -57,106 +53,90 @@ public class NotesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_notes);
 
         initViews();
-
         setupRecyclerView();
-
         setupFab();
-
-        loadNotes();
-
         setupAiButton();
+
+        loadNotes();           // Load ban đầu
     }
 
     private void initViews() {
-
         recyclerNotes = findViewById(R.id.recyclerNotes);
-
         fabAddNote = findViewById(R.id.fabAddNote);
-
         btnAi = findViewById(R.id.btnAi);
     }
 
     private void setupRecyclerView() {
-
-        recyclerNotes.setLayoutManager(
-                new LinearLayoutManager(this)
-        );
+        recyclerNotes.setLayoutManager(new LinearLayoutManager(this));
     }
 
     private void setupFab() {
-
         fabAddNote.setOnClickListener(v -> {
-
-            Intent intent =
-                    new Intent(
-                            NotesActivity.this,
-                            AddEditNoteActivity.class
-                    );
-
+            Intent intent = new Intent(NotesActivity.this, AddEditNoteActivity.class);
             launcher.launch(intent);
         });
     }
+
     private void setupAiButton() {
-        // Nếu bạn đã khai báo btnAi ở trên cùng rồi thì không cần khai báo lại
-        btnAi.setOnClickListener(v -> {
-            // Gọi hộp thoại nhập văn bản
-            showAiInputDialog();
-        });
+        btnAi.setOnClickListener(v -> showAiInputDialog());
     }
 
     private void loadNotes() {
+        ApiService apiService = RetrofitClient.getApiService();
 
-        ApiService apiService =
-                RetrofitClient.getApiService();
+        Long userId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                .getLong("USER_ID", 1L);
 
-        apiService.getNotes(1L).enqueue(new Callback<List<Note>>() {
-
+        apiService.getNotes(userId).enqueue(new Callback<List<Note>>() {
             @Override
-            public void onResponse(
-                    @NonNull Call<List<Note>> call,
-                    @NonNull Response<List<Note>> response
-            ) {
+            public void onResponse(@NonNull Call<List<Note>> call,
+                                   @NonNull Response<List<Note>> response) {
 
-                if (response.isSuccessful()
-                        && response.body() != null) {
+                android.util.Log.d("NOTE_DEBUG", "HTTP = " + response.code());
 
-                    List<Note> noteList = response.body();
+                if (response.body() != null) {
+                    android.util.Log.d("NOTE_DEBUG", "Size = " + response.body().size());
 
-                    adapter = new NoteAdapter(
-                            noteList,
+                    for (Note note : response.body()) {
+                        android.util.Log.d("NOTE_DEBUG",
+                                "Title = " + note.getTitle() +
+                                        " | Content = " + note.getContent());
+                    }
+                }
 
-                            // CLICK -> EDIT
-                            note -> {
+                if (response.isSuccessful() && response.body() != null) {
 
-                                Intent intent =
-                                        new Intent(
-                                                NotesActivity.this,
-                                                AddEditNoteActivity.class
-                                        );
+                    noteList.clear();
+                    noteList.addAll(response.body());
 
-                                intent.putExtra(
-                                        "note_id",
-                                        note.getId()
-                                );
+                    android.util.Log.d("NOTE_DEBUG",
+                            "Recycler Size = " + noteList.size());
 
-                                intent.putExtra(
-                                        "note_title",
-                                        note.getTitle()
-                                );
+                    if (noteAdapter == null) {
 
-                                intent.putExtra(
-                                        "note_content",
-                                        note.getContent()
-                                );
+                        noteAdapter = new NoteAdapter(
+                                noteList,
+                                note -> {
+                                    Intent intent = new Intent(
+                                            NotesActivity.this,
+                                            AddEditNoteActivity.class
+                                    );
 
-                                launcher.launch(intent);
-                            },
+                                    intent.putExtra("note_id", note.getId());
+                                    intent.putExtra("note_title", note.getTitle());
+                                    intent.putExtra("note_content", note.getContent());
 
-                            // LONG CLICK -> DELETE
-                            note -> showDeleteDialog(note)
-                    );
+                                    launcher.launch(intent);
+                                },
+                                note -> showDeleteDialog(note)
+                        );
 
-                    recyclerNotes.setAdapter(adapter);
+                        recyclerNotes.setAdapter(noteAdapter);
+
+                    } else {
+
+                        noteAdapter.notifyDataSetChanged();
+                    }
 
                 } else {
 
@@ -169,92 +149,53 @@ public class NotesActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(
-                    @NonNull Call<List<Note>> call,
-                    @NonNull Throwable t
-            ) {
-
-                Toast.makeText(
-                        NotesActivity.this,
-                        t.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show();
+            public void onFailure(@NonNull Call<List<Note>> call, @NonNull Throwable t) {
+                Toast.makeText(NotesActivity.this, "Lỗi: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
 
     private void showDeleteDialog(Note note) {
-
         new AlertDialog.Builder(this)
                 .setTitle("Delete Note")
                 .setMessage("Are you sure to delete this note?")
-                .setPositiveButton("Delete", (dialog, which) -> {
-
-                    deleteNote(note.getId());
-                })
+                .setPositiveButton("Delete", (dialog, which) -> deleteNote(note.getId()))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
     private void deleteNote(Long noteId) {
+        ApiService apiService = RetrofitClient.getApiService();
 
-        ApiService apiService =
-                RetrofitClient.getApiService();
+        apiService.deleteNote(noteId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(NotesActivity.this, "Deleted successfully", Toast.LENGTH_SHORT).show();
+                    loadNotes();
+                } else {
+                    Toast.makeText(NotesActivity.this, "Delete failed", Toast.LENGTH_SHORT).show();
+                }
+            }
 
-        apiService.deleteNote(noteId)
-                .enqueue(new Callback<String>() {
-
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<String> call,
-                            @NonNull Response<String> response
-                    ) {
-
-                        if (response.isSuccessful()) {
-
-                            Toast.makeText(
-                                    NotesActivity.this,
-                                    "Deleted successfully",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-
-                            loadNotes();
-
-                        } else {
-
-                            Toast.makeText(
-                                    NotesActivity.this,
-                                    "Delete failed",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<String> call,
-                            @NonNull Throwable t
-                    ) {
-
-                        Toast.makeText(
-                                NotesActivity.this,
-                                t.getMessage(),
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-                });
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Toast.makeText(NotesActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
+    // ==================== PHẦN AI (giữ nguyên) ====================
     private void showAiInputDialog() {
         EditText input = new EditText(this);
         input.setHint("Nhập nội dung cần tách thành ghi chú...");
-        // Thêm padding cho đẹp
         input.setPadding(40, 40, 40, 40);
 
         new AlertDialog.Builder(this)
                 .setTitle("AI Smart Note")
                 .setView(input)
                 .setPositiveButton("Tách việc", (dialog, which) -> {
-                    String content = input.getText().toString();
+                    String content = input.getText().toString().trim();
                     if (!content.isEmpty()) {
                         callAiApi(content);
                     } else {
@@ -266,17 +207,12 @@ public class NotesActivity extends AppCompatActivity {
     }
 
     private void callAiApi(String content) {
-        // 1. Vô hiệu hóa nút để tránh spam API
-        // btnSummarize.setEnabled(false);
-
         Map<String, String> request = new HashMap<>();
         request.put("content", content);
 
         RetrofitClient.getApiService().summarizeNote(request).enqueue(new Callback<List<String>>() {
             @Override
             public void onResponse(Call<List<String>> call, Response<List<String>> response) {
-                // btnSummarize.setEnabled(true); // Bật lại nút
-
                 if (response.isSuccessful() && response.body() != null) {
                     List<String> tasks = response.body();
                     if (tasks.isEmpty()) {
@@ -291,7 +227,6 @@ public class NotesActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<String>> call, Throwable t) {
-                // btnSummarize.setEnabled(true); // Bật lại nút
                 Toast.makeText(NotesActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
@@ -316,18 +251,16 @@ public class NotesActivity extends AppCompatActivity {
 
         scrollView.addView(container);
 
-        new androidx.appcompat.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Lưu các công việc")
                 .setView(scrollView)
                 .setPositiveButton("Lưu tất cả", (dialog, which) -> {
                     for (EditText et : editTexts) {
-                        String taskContent = et.getText().toString();
+                        String taskContent = et.getText().toString().trim();
                         if (!taskContent.isEmpty()) {
-                            // Tự động đặt tiêu đề là "Công việc" hoặc lấy từ nội dung
                             saveNoteToBackend("Công việc mới", taskContent);
                         }
                     }
-                    // Sau khi lưu xong thì tải lại danh sách trên màn hình chính
                     loadNotes();
                 })
                 .setNegativeButton("Hủy", null)
@@ -335,29 +268,27 @@ public class NotesActivity extends AppCompatActivity {
     }
 
     private void saveNoteToBackend(String title, String content) {
-        // Lấy ID từ SharedPreferences để đúng user
         Long userId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getLong("USER_ID", 1L);
 
         Note note = new Note();
         note.setTitle(title);
         note.setContent(content);
 
-        ApiService apiService = RetrofitClient.getRetrofitInstance().create(ApiService.class);
+        ApiService apiService = RetrofitClient.getApiService();   // ← Sửa ở đây
+
         apiService.createNote(userId, note).enqueue(new Callback<Note>() {
             @Override
             public void onResponse(@NonNull Call<Note> call, @NonNull Response<Note> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    if (noteList != null) {
-                        noteList.add(response.body());
-                        if (noteAdapter != null) noteAdapter.notifyDataSetChanged();
-                    }
                     Toast.makeText(NotesActivity.this, "Đã lưu: " + title, Toast.LENGTH_SHORT).show();
+                    loadNotes();                    // ← Tải lại danh sách
                 }
             }
+
             @Override
             public void onFailure(@NonNull Call<Note> call, @NonNull Throwable t) {
                 Toast.makeText(NotesActivity.this, "Lỗi lưu!", Toast.LENGTH_SHORT).show();
             }
         });
     }
-    }
+}

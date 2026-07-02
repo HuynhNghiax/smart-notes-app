@@ -48,7 +48,7 @@ public interface ApiService {
     );
 
     @DELETE("api/notes/{id}")
-    Call<String> deleteNote(@Path("id") Long id);
+    Call<Void> deleteNote(@Path("id") Long id);
 
    // CATEGORY APIs
     @POST("api/categories/create")
