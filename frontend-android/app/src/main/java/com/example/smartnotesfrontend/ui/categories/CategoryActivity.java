@@ -13,11 +13,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smartnotesfrontend.R;
+import com.example.smartnotesfrontend.data.model.Category;
 import com.example.smartnotesfrontend.utils.SharedPrefManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 public class CategoryActivity extends AppCompatActivity {
 
@@ -47,16 +47,16 @@ public class CategoryActivity extends AppCompatActivity {
                 new ArrayList<>(),
                 new CategoryListAdapter.OnCategoryClickListener() {
                     @Override
-                    public void onCategoryClick(Map<String, Object> category) {
+                    public void onCategoryClick(Category category) {
                         Toast.makeText(
                                 CategoryActivity.this,
-                                "Chọn: " + category.get("name"),
+                                "Chọn: " + category.getName(),
                                 Toast.LENGTH_SHORT
                         ).show();
                     }
 
                     @Override
-                    public void onCategoryLongClick(Map<String, Object> category) {
+                    public void onCategoryLongClick(Category category) {
                         showCategoryMenu(category);
                     }
                 }
@@ -135,7 +135,7 @@ public class CategoryActivity extends AppCompatActivity {
     }
 
     // Menu khi giữ lâu item category
-    private void showCategoryMenu(Map<String, Object> category) {
+    private void showCategoryMenu(Category category) {
         String[] options = {"Sửa", "Xóa"};
 
         new AlertDialog.Builder(this)
@@ -144,15 +144,14 @@ public class CategoryActivity extends AppCompatActivity {
                     if (which == 0) {
                         showEditCategoryDialog(category);
                     } else {
-                        Long categoryId = ((Number) category.get("id")).longValue();
-                        viewModel.deleteCategory(token, categoryId);
+                        viewModel.deleteCategory(token, category.getId());
                     }
                 })
                 .show();
     }
 
     // Dialog sửa category
-    private void showEditCategoryDialog(Map<String, Object> category) {
+    private void showEditCategoryDialog(Category category) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Sửa Danh Mục");
 
@@ -161,27 +160,23 @@ public class CategoryActivity extends AppCompatActivity {
         layout.setPadding(16, 16, 16, 16);
 
         EditText etName = new EditText(this);
-        etName.setText((String) category.get("name"));
+        etName.setText(category.getName());
         layout.addView(etName);
 
         EditText etDesc = new EditText(this);
-        Object desc = category.get("description");
-        etDesc.setText(desc != null ? (String) desc : "");
+        etDesc.setText(category.getDescription() != null ? category.getDescription() : "");
         layout.addView(etDesc);
 
         EditText etColor = new EditText(this);
-        Object color = category.get("colorCode");
-        etColor.setText(color != null ? (String) color : "");
+        etColor.setText(category.getColorCode() != null ? category.getColorCode() : "");
         layout.addView(etColor);
 
         builder.setView(layout);
 
         builder.setPositiveButton("Cập nhật", (dialog, which) -> {
-            Long categoryId = ((Number) category.get("id")).longValue();
-
             viewModel.updateCategory(
                     token,
-                    categoryId,
+                    category.getId(),
                     etName.getText().toString().trim(),
                     etDesc.getText().toString().trim(),
                     etColor.getText().toString().trim()

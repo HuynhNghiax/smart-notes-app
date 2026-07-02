@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.smartnotesfrontend.data.model.Category;
 import com.example.smartnotesfrontend.data.remote.ApiService;
 import com.example.smartnotesfrontend.data.remote.RetrofitClient;
 
@@ -19,7 +20,7 @@ public class CategoryViewModel extends ViewModel {
 
     private final ApiService apiService;
 
-    private final MutableLiveData<List<Map<String, Object>>> categoriesLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Category>> categoriesLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> messageLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoadingLiveData = new MutableLiveData<>();
 
@@ -27,7 +28,7 @@ public class CategoryViewModel extends ViewModel {
         this.apiService = RetrofitClient.getApiService();
     }
 
-    public LiveData<List<Map<String, Object>>> getCategories() {
+    public LiveData<List<Category>> getCategories() {
         return categoriesLiveData;
     }
 
@@ -43,10 +44,10 @@ public class CategoryViewModel extends ViewModel {
     public void fetchCategories(String token) {
         isLoadingLiveData.setValue(true);
 
-        apiService.getCategories("Bearer " + token).enqueue(new Callback<List<Map<String, Object>>>() {
+        apiService.getCategories("Bearer " + token).enqueue(new Callback<List<Category>>() {
             @Override
-            public void onResponse(Call<List<Map<String, Object>>> call,
-                                   Response<List<Map<String, Object>>> response) {
+            public void onResponse(Call<List<Category>> call,
+                                   Response<List<Category>> response) {
                 isLoadingLiveData.setValue(false);
 
                 if (response.isSuccessful() && response.body() != null) {
@@ -57,7 +58,7 @@ public class CategoryViewModel extends ViewModel {
             }
 
             @Override
-            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+            public void onFailure(Call<List<Category>> call, Throwable t) {
                 isLoadingLiveData.setValue(false);
                 messageLiveData.setValue("Lỗi kết nối: " + t.getMessage());
             }

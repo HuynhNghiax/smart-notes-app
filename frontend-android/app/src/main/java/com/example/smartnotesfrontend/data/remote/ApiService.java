@@ -3,6 +3,7 @@ package com.example.smartnotesfrontend.data.remote;
 import com.example.smartnotesfrontend.data.model.RegisterRequest;
 import com.example.smartnotesfrontend.data.model.AiResponse;
 import com.example.smartnotesfrontend.data.model.Note;
+import com.example.smartnotesfrontend.data.model.Category;
 
 import java.util.Map;
 import java.util.List;
@@ -54,7 +55,7 @@ public interface ApiService {
     Call<Map<String, Object>> createCategory(@Header("Authorization") String token, @Body Map<String, String> body);
 
     @GET("api/categories/list")
-    Call<List<Map<String, Object>>> getCategories(@Header("Authorization") String token);
+    Call<List<Category>> getCategories(@Header("Authorization") String token);
 
     @PUT("api/categories/update/{categoryId}")
     Call<Map<String, Object>> updateCategory(@Header("Authorization") String token, @Path("categoryId") Long categoryId, @Body Map<String, String> body);

@@ -8,6 +8,8 @@ public class Note {
     private ScheduleMode scheduleMode;
     private String scheduleDate; // Using String for simplicity with Retrofit/Gson if no custom adapter
     private String notifyTime;
+    private Long categoryId;
+    private Category category;
 
     public Note() {
     }
@@ -64,5 +66,21 @@ public class Note {
 
     public void setNotifyTime(String notifyTime) {
         this.notifyTime = notifyTime;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 }

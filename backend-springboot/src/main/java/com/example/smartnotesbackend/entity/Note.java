@@ -34,6 +34,9 @@ public class Note {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @Column(name = "category_id", insertable = false, updatable = false)
+    private Long categoryId;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

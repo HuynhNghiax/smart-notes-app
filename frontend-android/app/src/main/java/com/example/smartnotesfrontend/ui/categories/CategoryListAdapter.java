@@ -11,24 +11,24 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smartnotesfrontend.R;
+import com.example.smartnotesfrontend.data.model.Category;
 
 import java.util.List;
-import java.util.Map;
 
 public class CategoryListAdapter extends RecyclerView.Adapter<CategoryListAdapter.ViewHolder> {
 
     private Context context;
-    private List<Map<String, Object>> categories;
+    private List<Category> categories;
     private OnCategoryClickListener listener;
 
     // Interface xử lý click và long click item category
     public interface OnCategoryClickListener {
-        void onCategoryClick(Map<String, Object> category);
-        void onCategoryLongClick(Map<String, Object> category);
+        void onCategoryClick(Category category);
+        void onCategoryLongClick(Category category);
     }
 
     public CategoryListAdapter(Context context,
-                               List<Map<String, Object>> categories,
+                               List<Category> categories,
                                OnCategoryClickListener listener) {
         this.context = context;
         this.categories = categories;
@@ -36,7 +36,7 @@ public class CategoryListAdapter extends RecyclerView.Adapter<CategoryListAdapte
     }
 
     // Cập nhật dữ liệu danh sách category
-    public void updateData(List<Map<String, Object>> newCategories) {
+    public void updateData(List<Category> newCategories) {
         this.categories = newCategories;
         notifyDataSetChanged();
     }
@@ -51,11 +51,11 @@ public class CategoryListAdapter extends RecyclerView.Adapter<CategoryListAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Map<String, Object> category = categories.get(position);
+        Category category = categories.get(position);
 
-        String name = (String) category.get("name");
-        String description = (String) category.get("description");
-        String colorCode = (String) category.get("colorCode");
+        String name = category.getName();
+        String description = category.getDescription();
+        String colorCode = category.getColorCode();
 
         // Set tên category
         holder.tvCategoryName.setText(name);

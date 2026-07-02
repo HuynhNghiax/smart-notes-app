@@ -4,5 +4,6 @@
     <item
         android:id="@+id/action_logout"
         android:title="Đăng xuất"
-        app:showAsAction="never" />
+        android:icon="@android:drawable/ic_lock_power_off"
+        app:showAsAction="ifRoom" />
 </menu>

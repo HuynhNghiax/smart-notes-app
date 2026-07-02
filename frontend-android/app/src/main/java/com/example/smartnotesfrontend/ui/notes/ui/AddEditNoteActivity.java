@@ -17,11 +17,15 @@ import androidx.appcompat.widget.SwitchCompat;
 
 import com.example.smartnotesfrontend.R;
 import com.example.smartnotesfrontend.data.model.Note;
+import com.example.smartnotesfrontend.data.model.Category;
 import com.example.smartnotesfrontend.data.model.ScheduleMode;
 import com.example.smartnotesfrontend.data.remote.ApiService;
 import com.example.smartnotesfrontend.data.remote.RetrofitClient;
+import com.example.smartnotesfrontend.utils.SharedPrefManager;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
 import retrofit2.Call;
@@ -38,6 +42,10 @@ public class AddEditNoteActivity extends AppCompatActivity {
     private LinearLayout layoutScheduleOptions;
     private Spinner spinnerMode;
     private Button btnPickDate, btnPickTime;
+
+    private Spinner spinnerCategory;
+    private List<Category> categoriesList = new ArrayList<>();
+    private Long selectedCategoryId = null;
 
     private String selectedDate = "";
     private String selectedTime = "";
@@ -63,6 +71,8 @@ public class AddEditNoteActivity extends AppCompatActivity {
         edtContent = findViewById(R.id.edtContent);
         btnSave = findViewById(R.id.btnSave);
 
+        spinnerCategory = findViewById(R.id.spinnerCategory);
+
         switchSchedule = findViewById(R.id.switchSchedule);
         layoutScheduleOptions = findViewById(R.id.layoutScheduleOptions);
         spinnerMode = findViewById(R.id.spinnerMode);
@@ -83,6 +93,46 @@ public class AddEditNoteActivity extends AppCompatActivity {
         // Handle Pickers
         btnPickDate.setOnClickListener(v -> showDatePicker());
         btnPickTime.setOnClickListener(v -> showTimePicker());
+
+        fetchCategories();
+    }
+
+    private void fetchCategories() {
+        String token = SharedPrefManager.getInstance(this).getToken();
+        ApiService apiService = RetrofitClient.getApiService();
+        apiService.getCategories("Bearer " + token).enqueue(new Callback<List<Category>>() {
+            @Override
+            public void onResponse(@NonNull Call<List<Category>> call, @NonNull Response<List<Category>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    categoriesList.clear();
+                    // Thêm một option trống
+                    Category none = new Category(null, "Không có danh mục");
+                    categoriesList.add(none);
+                    categoriesList.addAll(response.body());
+
+                    ArrayAdapter<Category> adapter = new ArrayAdapter<>(AddEditNoteActivity.this,
+                            android.R.layout.simple_spinner_item, categoriesList);
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spinnerCategory.setAdapter(adapter);
+
+                    // Nếu đang ở chế độ sửa, chọn category tương ứng
+                    if (isEditMode && selectedCategoryId != null) {
+                        for (int i = 0; i < categoriesList.size(); i++) {
+                            if (categoriesList.get(i).getId() != null &&
+                                    categoriesList.get(i).getId().equals(selectedCategoryId)) {
+                                spinnerCategory.setSelection(i);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<Category>> call, @NonNull Throwable t) {
+                Toast.makeText(AddEditNoteActivity.this, "Lỗi tải danh mục", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showDatePicker() {
@@ -125,6 +175,11 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
             edtTitle.setText(title);
             edtContent.setText(content);
+
+            if (getIntent().hasExtra("note_category_id")) {
+                selectedCategoryId = getIntent().getLongExtra("note_category_id", -1);
+                if (selectedCategoryId == -1) selectedCategoryId = null;
+            }
 
             if (getIntent().hasExtra("note_schedule_mode")) {
                 String modeStr = getIntent().getStringExtra("note_schedule_mode");
@@ -180,6 +235,13 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
             note.setTitle(title);
             note.setContent(content);
+
+            Category selectedCategory = (Category) spinnerCategory.getSelectedItem();
+            if (selectedCategory != null && selectedCategory.getId() != null) {
+                note.setCategoryId(selectedCategory.getId());
+            } else {
+                note.setCategoryId(null);
+            }
 
             if (switchSchedule.isChecked()) {
                 int pos = spinnerMode.getSelectedItemPosition();

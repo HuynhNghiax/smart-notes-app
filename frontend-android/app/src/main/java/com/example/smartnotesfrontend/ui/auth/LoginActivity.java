@@ -40,6 +40,16 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // KIỂM TRA PHIÊN ĐĂNG NHẬP (Session Persistence)
+        // Nếu đã có token, chuyển thẳng vào MainActivity
+        String existingToken = SharedPrefManager.getInstance(this).getToken();
+        if (existingToken != null && !existingToken.isEmpty()) {
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_login);
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
@@ -97,13 +107,15 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void loginWithGoogleManager() {
-        // NOTE: Replace with your actual Web Client ID from Google Cloud Console
+        // LƯU Ý: serverClientId này đang có project number 648616238662
+        // Trong khi google-services.json của bạn là 748114122843.
+        // Đây có thể là nguyên nhân gây lỗi "No credentials available".
         String serverClientId = "648616238662-u9uuojremvv9leppin6pm3daqu16416j.apps.googleusercontent.com";
 
         GetGoogleIdOption googleIdOption = new GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(serverClientId)
-                .setAutoSelectEnabled(true)
+                .setAutoSelectEnabled(false) // Tắt tự động chọn để hiện bảng chọn tài khoản
                 .build();
 
         GetCredentialRequest request = new GetCredentialRequest.Builder()
@@ -123,7 +135,12 @@ public class LoginActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(@NonNull GetCredentialException e) {
-                        Toast.makeText(LoginActivity.this, "Lỗi xác thực: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        String errorMsg = e.getMessage();
+                        if (errorMsg != null && errorMsg.contains("No credentials available")) {
+                            errorMsg = "Không tìm thấy tài khoản Google phù hợp. Vui lòng kiểm tra SHA-1 và Client ID.";
+                        }
+                        Toast.makeText(LoginActivity.this, "Lỗi xác thực: " + errorMsg, Toast.LENGTH_LONG).show();
+                        android.util.Log.e("LoginActivity", "Google login error", e);
                     }
                 }
         );

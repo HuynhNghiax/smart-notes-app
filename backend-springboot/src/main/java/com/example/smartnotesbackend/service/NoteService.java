@@ -1,8 +1,10 @@
 package com.example.smartnotesbackend.service;
 
+import com.example.smartnotesbackend.entity.Category;
 import com.example.smartnotesbackend.entity.Note;
 import com.example.smartnotesbackend.entity.User;
 import com.example.smartnotesbackend.entity.ScheduleMode;
+import com.example.smartnotesbackend.repository.CategoryRepository;
 import com.example.smartnotesbackend.repository.NoteRepository;
 import com.example.smartnotesbackend.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -17,11 +19,14 @@ public class NoteService {
 
     private final NoteRepository noteRepository;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
 
     public NoteService(NoteRepository noteRepository,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       CategoryRepository categoryRepository) {
         this.noteRepository = noteRepository;
         this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     // CREATE
@@ -31,6 +36,11 @@ public class NoteService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         note.setUser(user);
+
+        if (note.getCategoryId() != null) {
+            Category category = categoryRepository.findById(note.getCategoryId()).orElse(null);
+            note.setCategory(category);
+        }
 
         // Compute next scheduled time based on provided fields
         note.setNextScheduledAt(computeNextScheduledAt(note));
@@ -50,6 +60,14 @@ public class NoteService {
 
         note.setTitle(updatedNote.getTitle());
         note.setContent(updatedNote.getContent());
+
+        if (updatedNote.getCategoryId() != null) {
+            Category category = categoryRepository.findById(updatedNote.getCategoryId()).orElse(null);
+            note.setCategory(category);
+        }
+        else {
+            note.setCategory(null);
+        }
         
         // Update schedule fields if provided
         note.setScheduleMode(updatedNote.getScheduleMode());

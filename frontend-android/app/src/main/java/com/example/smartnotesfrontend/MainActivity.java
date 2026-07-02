@@ -121,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
                                 intent.putExtra("note_id", note.getId());
                                 intent.putExtra("note_title", note.getTitle());
                                 intent.putExtra("note_content", note.getContent());
+                                if (note.getCategoryId() != null) {
+                                    intent.putExtra("note_category_id", note.getCategoryId());
+                                }
                                 if (note.getScheduleMode() != null) {
                                     intent.putExtra("note_schedule_mode", note.getScheduleMode().name());
                                 }
